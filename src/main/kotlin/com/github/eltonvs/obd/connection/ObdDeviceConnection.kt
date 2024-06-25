@@ -9,14 +9,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import java.io.InputStream
-import java.io.OutputStream
+import kotlinx.io.InternalIoApi
+import kotlinx.io.Source
 import kotlin.system.measureTimeMillis
 
 
 class ObdDeviceConnection(
-    private val inputStream: InputStream,
-    private val outputStream: OutputStream
+    private val inputStream: Source,
+    private val outputStream: Source
 ) {
     private val responseCache = mutableMapOf<ObdCommand, ObdRawResponse>()
 
@@ -49,16 +49,18 @@ class ObdDeviceConnection(
         return ObdRawResponse(rawData, elapsedTime)
     }
 
+    @OptIn(InternalIoApi::class)
     private suspend fun sendCommand(command: ObdCommand, delayTime: Long) = runBlocking {
         withContext(Dispatchers.IO) {
-            outputStream.write("${command.rawCommand}\r".toByteArray())
-            outputStream.flush()
+            outputStream.buffer.write("${command.rawCommand}\r".toByteArray())
+            outputStream.buffer.flush()
             if (delayTime > 0) {
                 delay(delayTime)
             }
         }
     }
 
+    @OptIn(InternalIoApi::class)
     private suspend fun readRawData(maxRetries: Int): String = runBlocking {
         var b: Byte
         var c: Char
@@ -68,8 +70,8 @@ class ObdDeviceConnection(
         withContext(Dispatchers.IO) {
             // read until '>' arrives OR end of stream reached (-1)
             while (retriesCount <= maxRetries) {
-                if (inputStream.available() > 0) {
-                    b = inputStream.read().toByte()
+                if (inputStream.buffer.size > 0) {
+                    b = inputStream.readByte()
                     if (b < 0) {
                         break
                     }
