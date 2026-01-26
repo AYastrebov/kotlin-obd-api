@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalWasmDsl::class)
 
 import com.android.build.api.dsl.androidLibrary
+import org.jetbrains.dokka.gradle.tasks.DokkaGenerateTask
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
@@ -104,4 +105,39 @@ publishing {
             }
         }
     }
+}
+
+// Dokka documentation configuration
+dokka {
+    moduleName.set("kotlin-obd-api")
+    moduleVersion.set(project.version.toString())
+
+    dokkaSourceSets.configureEach {
+        includes.from("Module.md")
+
+        sourceLink {
+            localDirectory.set(projectDir.resolve("src"))
+            remoteUrl("https://github.com/eltonvs/kotlin-obd-api/tree/master/kotlin-obd-api/src")
+            remoteLineSuffix.set("#L")
+        }
+
+        externalDocumentationLinks {
+            create("kotlinx.coroutines") {
+                url("https://kotlinlang.org/api/kotlinx.coroutines/")
+            }
+            create("kotlinx.io") {
+                url("https://kotlinlang.org/api/kotlinx-io/")
+            }
+        }
+    }
+
+    pluginsConfiguration {
+        html {
+            footerMessage.set("Copyright &copy; 2018-2025 Elton Viana")
+        }
+    }
+}
+
+tasks.withType<DokkaGenerateTask>().configureEach {
+    notCompatibleWithConfigurationCache("Dokka does not support configuration cache")
 }
