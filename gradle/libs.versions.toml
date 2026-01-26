@@ -1,0 +1,42 @@
+[versions]
+
+agp = "8.12.3"
+caupain = "1.8.1"
+dokka = "2.1.0"
+kotlin = "2.3.0"
+maven-publish = "0.35.0"
+kotlinx-coroutines = "1.10.2"
+kotlinx-datetime = "0.7.1"
+kotlinx-serialization = "1.10.0"
+kotlinx-binary-validator = "0.18.1"
+kotlinx-io = "0.8.2"
+logback = "1.5.25"
+junit-jupiter = "6.0.2"
+
+[libraries]
+
+# Coroutines
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+# Serialization
+kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+# IO
+kotlinx-io-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io" }
+kotlinx-io-bytestring = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-bytestring", version.ref = "kotlinx-io" }
+# Date & Time
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime" }
+# Logback
+logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+# JUnit
+junit-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params", version.ref = "junit-jupiter" }
+
+[plugins]
+
+android-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+caupain = { id = "com.deezer.caupain", version.ref = "caupain" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka"  }
+kotlinx-binary-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinx-binary-validator" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
+multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
