@@ -4,7 +4,7 @@ import com.github.eltonvs.obd.command.RegexPatterns.BUSINIT_ERROR_MESSAGE_PATTER
 import com.github.eltonvs.obd.command.RegexPatterns.DIGITS_LETTERS_PATTERN
 import com.github.eltonvs.obd.command.RegexPatterns.ERROR_MESSAGE_PATTERN
 import com.github.eltonvs.obd.command.RegexPatterns.MISUNDERSTOOD_COMMAND_MESSAGE_PATTERN
-import com.github.eltonvs.obd.command.RegexPatterns.NO_DATE_MESSAGE_PATTERN
+import com.github.eltonvs.obd.command.RegexPatterns.NO_DATA_MESSAGE_PATTERN
 import com.github.eltonvs.obd.command.RegexPatterns.STOPPED_MESSAGE_PATTERN
 import com.github.eltonvs.obd.command.RegexPatterns.UNABLE_TO_CONNECT_MESSAGE_PATTERN
 import com.github.eltonvs.obd.command.RegexPatterns.UNSUPPORTED_COMMAND_MESSAGE_PATTERN
@@ -23,7 +23,7 @@ public abstract class BadResponseException(private val command: ObdCommand, priv
                         throw BusInitException(command, response)
                     contains(MISUNDERSTOOD_COMMAND_MESSAGE_PATTERN.sanitize()) ->
                         throw MisunderstoodCommandException(command, response)
-                    contains(NO_DATE_MESSAGE_PATTERN.sanitize()) ->
+                    contains(NO_DATA_MESSAGE_PATTERN.sanitize()) ->
                         throw NoDataException(command, response)
                     contains(STOPPED_MESSAGE_PATTERN.sanitize()) ->
                         throw StoppedException(command, response)

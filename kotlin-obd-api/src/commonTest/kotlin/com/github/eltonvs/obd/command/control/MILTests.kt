@@ -23,6 +23,34 @@ class MILOnCommandTests {
             assertEquals("MIL is ${if (expected) "ON" else "OFF"}", obdResponse.formattedValue, "Failed for: $rawValue")
         }
     }
+
+    @Test
+    fun `test short response handler returns MIL off`() {
+        // Test the handler directly to verify getOrElse provides safe array access
+        // Response with fewer than 3 bytes should default to MIL off (using getOrElse with default 0)
+        val command = MILOnCommand()
+        listOf(
+            "4101" to false,      // Only 2 bytes (mode + pid), missing data byte
+            "410100" to false,    // Only 3 bytes, third byte is 0
+            "41" to false,        // Only 1 byte
+            "" to false           // Empty response
+        ).forEach { (rawValue, expected) ->
+            val rawResponse = ObdRawResponse(value = rawValue, elapsedTime = 0)
+            // Test the handler directly to bypass validation (which would throw for invalid responses)
+            val result = command.handler(rawResponse)
+            assertEquals(expected.toString(), result, "Handler failed for short response: '$rawValue'")
+        }
+    }
+
+    @Test
+    fun `test minimal valid response returns MIL off`() {
+        // Test with a minimal but valid hex response
+        val rawResponse = ObdRawResponse(value = "410100", elapsedTime = 0)
+        val obdResponse = MILOnCommand().run {
+            handleResponse(rawResponse)
+        }
+        assertEquals("MIL is OFF", obdResponse.formattedValue)
+    }
 }
 
 class DistanceMILOnCommandTests {

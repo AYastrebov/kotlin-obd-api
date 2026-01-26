@@ -5,8 +5,15 @@ import com.github.eltonvs.obd.command.ObdRawResponse
 import com.github.eltonvs.obd.command.bytesToInt
 import com.github.eltonvs.obd.command.formatToDecimalPlaces
 
+/**
+ * OBD-II standard temperature offset in degrees Celsius.
+ *
+ * Raw temperature values in OBD-II are transmitted as (actual + 40) to allow
+ * representation of temperatures from -40C to 215C using unsigned bytes (0-255).
+ */
+private const val OBD_TEMPERATURE_OFFSET = 40f
 
-private fun calculateTemperature(rawValue: IntArray): Float = bytesToInt(rawValue, bytesToProcess = 1) - 40f
+private fun calculateTemperature(rawValue: IntArray): Float = bytesToInt(rawValue, bytesToProcess = 1) - OBD_TEMPERATURE_OFFSET
 
 public class AirIntakeTemperatureCommand : ObdCommand() {
     override val tag: String = "AIR_INTAKE_TEMPERATURE"

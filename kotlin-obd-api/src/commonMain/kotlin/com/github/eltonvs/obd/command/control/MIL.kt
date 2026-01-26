@@ -13,7 +13,7 @@ public class MILOnCommand : ObdCommand() {
     override val pid: String = "01"
 
     override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse ->
-        val mil = it.bufferedValue[2]
+        val mil = it.bufferedValue.getOrElse(2) { 0 }
         val milOn = (mil and 0x80) == 128
         milOn.toString()
     }

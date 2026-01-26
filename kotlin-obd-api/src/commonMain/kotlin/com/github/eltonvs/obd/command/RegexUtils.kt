@@ -13,7 +13,7 @@ public object RegexPatterns {
     // Error patterns
     public const val BUSINIT_ERROR_MESSAGE_PATTERN: String = "BUS INIT... ERROR"
     public const val MISUNDERSTOOD_COMMAND_MESSAGE_PATTERN: String = "?"
-    public const val NO_DATE_MESSAGE_PATTERN: String = "NO DATA"
+    public const val NO_DATA_MESSAGE_PATTERN: String = "NO DATA"
     public const val STOPPED_MESSAGE_PATTERN: String = "STOPPED"
     public const val UNABLE_TO_CONNECT_MESSAGE_PATTERN: String = "UNABLE TO CONNECT"
     public const val ERROR_MESSAGE_PATTERN: String = "ERROR"
