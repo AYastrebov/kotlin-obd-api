@@ -2,8 +2,6 @@ package com.github.eltonvs.obd.command.control
 
 import com.github.eltonvs.obd.command.Monitors
 import com.github.eltonvs.obd.command.ObdRawResponse
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,7 +14,7 @@ private val expected1 = SensorStatusData(
     milOn = true,
     dtcCount = 3,
     isSpark = true,
-    items = Monitors.values().filter { it.isSparkIgnition ?: true }.map { it to completeStatus }.toMap()
+    items = Monitors.entries.filter { it.isSparkIgnition ?: true }.associate { it to completeStatus }
 )
 private val expected2 = SensorStatusData(
     milOn = false,
@@ -56,7 +54,7 @@ private val expected4 = SensorStatusData(
     milOn = false,
     dtcCount = 0,
     isSpark = true,
-    items = Monitors.values().filter { it.isSparkIgnition ?: true }.map { it to completeStatus }.toMap()
+    items = Monitors.entries.filter { it.isSparkIgnition ?: true }.associate { it to completeStatus }
 )
 private val expected5 = SensorStatusData(
     milOn = false,
@@ -75,58 +73,48 @@ private val expected5 = SensorStatusData(
     )
 )
 
-@RunWith(Parameterized::class)
-class MonitorStatusSinceCodesClearedCommandTests(private val rawValue: String, private val expected: SensorStatusData) {
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters
-        fun values() = listOf(
-            arrayOf("41018307FF00", expected1),
-            arrayOf("41 01 83 07 FF 00", expected1),
-            arrayOf("8307FF00", expected1),
-            arrayOf("410100790303", expected2),
-            arrayOf("41 01 00 79 03 03", expected2),
-            arrayOf("00790303", expected2),
-            arrayOf("41010007EBC8", expected3),
-            arrayOf("41 01 00 07 EB C8", expected3),
-            arrayOf("0007EBC8", expected3)
-        )
-    }
-
+class MonitorStatusSinceCodesClearedCommandTests {
     @Test
     fun `test valid monitor status since CC responses handler`() {
-        val rawResponse = ObdRawResponse(value = rawValue, elapsedTime = 0)
-        val obdResponse = MonitorStatusSinceCodesClearedCommand().also {
-            it.handleResponse(rawResponse)
+        listOf(
+            "41018307FF00" to expected1,
+            "41 01 83 07 FF 00" to expected1,
+            "8307FF00" to expected1,
+            "410100790303" to expected2,
+            "41 01 00 79 03 03" to expected2,
+            "00790303" to expected2,
+            "41010007EBC8" to expected3,
+            "41 01 00 07 EB C8" to expected3,
+            "0007EBC8" to expected3
+        ).forEach { (rawValue, expected) ->
+            val rawResponse = ObdRawResponse(value = rawValue, elapsedTime = 0)
+            val obdResponse = MonitorStatusSinceCodesClearedCommand().also {
+                it.handleResponse(rawResponse)
+            }
+            assertEquals(expected, obdResponse.data, "Failed for: $rawValue")
         }
-        assertEquals(expected, obdResponse.data)
     }
 }
 
-@RunWith(Parameterized::class)
-class MonitorStatusCurrentDriveCycleCommandTests(private val rawValue: String, private val expected: SensorStatusData) {
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters
-        fun values() = listOf(
-            arrayOf("41410007FF00", expected4),
-            arrayOf("41 41 00 07 FF 00", expected4),
-            arrayOf("0007FF00", expected4),
-            arrayOf("414100790303", expected2),
-            arrayOf("41 41 00 79 03 03", expected2),
-            arrayOf("00790303", expected2),
-            arrayOf("414100482135", expected5),
-            arrayOf("41 41 00 48 21 35", expected5),
-            arrayOf("00482135", expected5)
-        )
-    }
-
+class MonitorStatusCurrentDriveCycleCommandTests {
     @Test
     fun `test valid monitor status current drive cycle responses handler`() {
-        val rawResponse = ObdRawResponse(value = rawValue, elapsedTime = 0)
-        val obdResponse = MonitorStatusCurrentDriveCycleCommand().also {
-            it.handleResponse(rawResponse)
+        listOf(
+            "41410007FF00" to expected4,
+            "41 41 00 07 FF 00" to expected4,
+            "0007FF00" to expected4,
+            "414100790303" to expected2,
+            "41 41 00 79 03 03" to expected2,
+            "00790303" to expected2,
+            "414100482135" to expected5,
+            "41 41 00 48 21 35" to expected5,
+            "00482135" to expected5
+        ).forEach { (rawValue, expected) ->
+            val rawResponse = ObdRawResponse(value = rawValue, elapsedTime = 0)
+            val obdResponse = MonitorStatusCurrentDriveCycleCommand().also {
+                it.handleResponse(rawResponse)
+            }
+            assertEquals(expected, obdResponse.data, "Failed for: $rawValue")
         }
-        assertEquals(expected, obdResponse.data)
     }
 }
