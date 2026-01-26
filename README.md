@@ -6,74 +6,57 @@
 
 [![GitHub release](https://img.shields.io/github/v/release/eltonvs/kotlin-obd-api)](https://github.com/eltonvs/kotlin-obd-api/releases)
 [![CI Status](https://github.com/eltonvs/kotlin-obd-api/workflows/CI/badge.svg)](https://github.com/eltonvs/kotlin-obd-api/actions?query=workflow%3ACI)
-[![Maintainability](https://api.codeclimate.com/v1/badges/e70f6ab78bdae20de178/maintainability)](https://codeclimate.com/github/eltonvs/kotlin-obd-api/maintainability)
-[![codebeat badge](https://codebeat.co/badges/6af3e4ad-1171-4868-871f-9e5e6be63df9)](https://codebeat.co/projects/github-com-eltonvs-kotlin-obd-api-master)
 [![GitHub license](https://img.shields.io/github/license/eltonvs/kotlin-obd-api)](https://github.com/eltonvs/kotlin-obd-api/blob/master/LICENSE)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://opensource.org/)
 
 
 A lightweight and developer-driven API to query and parse OBD commands.
 
-Written in pure Kotlin and platform agnostic with a simple and easy to use interface, so you can hack your car without any hassle. :blue_car:
+Written in pure Kotlin Multiplatform with a simple and easy to use interface, so you can hack your car without any hassle. :blue_car:
 
-This is a flexible API that allows developers to plug-in to any connection interface (Bluetooth, Wifi, USB...). By default we use an `ObdDeviceConnection` that receives an `InputStream` and an `OutputStream` as parameters (so if you can get this from your connection interface, you're good to go :thumbsup:).
+**Supported platforms:** JVM, Android, JS (Node.js), WASM JS, iOS (x64, arm64, simulator), macOS (x64, arm64), Linux x64, Windows x64.
+
+This is a flexible API that allows developers to plug-in to any connection interface (Bluetooth, Wifi, USB...). By default we use an `ObdDeviceConnection` that receives a `Source` and a `Sink` from [kotlinx-io](https://github.com/Kotlin/kotlinx-io) as parameters (so if you can get this from your connection interface, you're good to go :thumbsup:).
 
 
 ## Installation
 
+### Gradle (Kotlin DSL)
 
-### Gradle
-
-In your root `build.gradle` file, at the end of repositories:
-```gradle
-repositories {
-  ...
-  maven { url 'https://jitpack.io' }
+```kotlin
+dependencies {
+    implementation("com.github.eltonvs.obd:kotlin-obd-api:1.4.0")
 }
 ```
 
-Add the dependency
+### Gradle (Groovy)
+
 ```gradle
 dependencies {
-  ...
-
-  // Kolin OBD API
-  implementation 'com.github.eltonvs:kotlin-obd-api:1.3.0'
+    implementation 'com.github.eltonvs.obd:kotlin-obd-api:1.4.0'
 }
 ```
-
-### Maven
-
-Add jitpack to the repositories section
-```xml
-<repositories>
-  <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-  </repository>
-</repositories>
-```
-
-Add the dependency
-```xml
-<dependency>
-  <groupId>com.github.eltonvs</groupId>
-  <artifactId>kotlin-obd-api</artifactId>
-  <version>1.3.0</version>
-</dependency>
-```
-
-### Manual
-
-You can download a jar from GitHub's [releases page](https://github.com/eltonvs/kotlin-obd-api/releases).
 
 ## Basic Usage
 
-Get an `InputStream` and an `OutputStream` from your connection interface and create an `ObdDeviceConnection` instance.
+Get a `Source` and a `Sink` from your connection interface (using [kotlinx-io](https://github.com/Kotlin/kotlinx-io)) and create an `ObdDeviceConnection` instance.
 
 ```kotlin
 // Create ObdDeviceConnection instance
-val obdConnection = ObdDeviceConnection(inputStream, outputStream)
+val obdConnection = ObdDeviceConnection(source, sink)
+```
+
+On JVM, you can convert Java streams to kotlinx-io:
+
+```kotlin
+import kotlinx.io.asSource
+import kotlinx.io.asSink
+import kotlinx.io.buffered
+
+val obdConnection = ObdDeviceConnection(
+    inputStream.asSource().buffered(),
+    outputStream.asSink().buffered()
+)
 ```
 
 With this, you're ready to run any command you want, just pass the command instance to the `.run` method. This command accepts 3 parameters: `command`, `useCache` (default = `false`) and `delayTime` (default = `0`).
