@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.android.library)
     alias(libs.plugins.dokka)
-    alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.maven.publish)
 }
 
@@ -40,10 +39,6 @@ kotlin {
         commonMain.dependencies {
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.io.core)
-
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlinx.io.bytestring)
-            implementation(libs.kotlinx.serialization.json)
         }
 
         commonTest.dependencies {
