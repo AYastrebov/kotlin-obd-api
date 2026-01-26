@@ -7,35 +7,78 @@ import com.github.eltonvs.obd.command.calculatePercentage
 import com.github.eltonvs.obd.command.formatToDecimalPlaces
 
 /**
- * A parser that transforms an OBD raw response into a typed value.
+ * Functional interface for parsing OBD raw responses into typed values.
+ *
+ * Implement this interface to create custom parsers for OBD command responses.
+ * Parsers are composable and can be reused across multiple commands.
+ *
+ * Example:
+ * ```kotlin
+ * val speedParser = ObdParser<Long> { rawResponse ->
+ *     val speed = rawResponse.bufferedValue[2].toLong()
+ *     TypedValue.IntegerValue(speed, unit = "km/h")
+ * }
+ *
+ * val result = speedParser.parse(rawResponse)
+ * println(result.value)  // 80
+ * ```
  *
  * @param T The type of value this parser produces
+ * @see Parsers
+ * @see TypedValue
  */
 public fun interface ObdParser<T> {
     /**
-     * Parse the raw response and return a typed value
+     * Parse the raw response and return a typed value.
+     *
+     * @param rawResponse The raw response from the OBD adapter
+     * @return A [TypedValue] containing the parsed result
      */
     public fun parse(rawResponse: ObdRawResponse): TypedValue<T>
 }
 
 /**
- * Collection of pre-built parsers for common OBD response patterns.
+ * Factory object providing pre-built parsers for common OBD response patterns.
  *
- * Usage:
+ * Use these parsers directly or as building blocks for more complex parsing logic.
+ * All parsers follow OBD-II standard conventions for data interpretation.
+ *
+ * Example usage:
  * ```kotlin
- * val speedParser = Parsers.integer(bytesToProcess = 1)
+ * // Create parsers
+ * val speedParser = Parsers.integer(bytesToProcess = 1, unit = "km/h")
  * val throttleParser = Parsers.percentage(bytesToProcess = 1)
  * val coolantParser = Parsers.temperature()
+ *
+ * // Use in commands
+ * val speedCommand = obdCommand {
+ *     tag = "SPEED"
+ *     name = "Vehicle Speed"
+ *     mode = "01"
+ *     pid = "0D"
+ *     parseWith(speedParser)
+ * }
  * ```
+ *
+ * @see ObdParser
+ * @see ObdCommandBuilder
  */
 public object Parsers {
     /**
      * Creates a parser for integer values.
      *
-     * @param bytesToProcess Number of bytes to read (-1 for all)
-     * @param multiplier Multiplier to apply to raw value
-     * @param offset Offset to add after multiplication
-     * @param unit Unit string for the value
+     * Formula: `value = (rawBytes * multiplier) + offset`
+     *
+     * The raw bytes are combined using big-endian ordering:
+     * - 1 byte: A
+     * - 2 bytes: A*256 + B
+     * - 3 bytes: A*65536 + B*256 + C
+     *
+     * @param bytesToProcess Number of bytes to read (-1 for all data bytes)
+     * @param multiplier Multiplier to apply to raw value (default: 1)
+     * @param offset Offset to add after multiplication (default: 0)
+     * @param unit Unit string for the value (default: empty)
+     * @return Parser that produces [TypedValue.IntegerValue]
      */
     public fun integer(
         bytesToProcess: Int = -1,
@@ -54,11 +97,16 @@ public object Parsers {
     /**
      * Creates a parser for float values.
      *
-     * @param bytesToProcess Number of bytes to read (-1 for all)
-     * @param multiplier Multiplier to apply to raw value
-     * @param offset Offset to add after multiplication
-     * @param decimalPlaces Number of decimal places for string representation
-     * @param unit Unit string for the value
+     * Formula: `value = (rawBytes * multiplier) + offset`
+     *
+     * Use this for values requiring decimal precision.
+     *
+     * @param bytesToProcess Number of bytes to read (-1 for all data bytes)
+     * @param multiplier Multiplier to apply to raw value (default: 1)
+     * @param offset Offset to add after multiplication (default: 0)
+     * @param decimalPlaces Number of decimal places for string representation (default: 2)
+     * @param unit Unit string for the value (default: empty)
+     * @return Parser that produces [TypedValue.FloatValue]
      */
     public fun float(
         bytesToProcess: Int = -1,
@@ -79,10 +127,13 @@ public object Parsers {
     /**
      * Creates a parser for percentage values.
      *
-     * Uses standard OBD percentage formula: value * 100 / 255
+     * Uses standard OBD-II percentage formula: `percentage = (rawValue * 100) / 255`
      *
-     * @param bytesToProcess Number of bytes to read (-1 for all)
-     * @param decimalPlaces Number of decimal places for string representation
+     * This maps 0x00 to 0% and 0xFF to 100%.
+     *
+     * @param bytesToProcess Number of bytes to read (-1 for all data bytes)
+     * @param decimalPlaces Number of decimal places for string representation (default: 1)
+     * @return Parser that produces [TypedValue.PercentageValue]
      */
     public fun percentage(
         bytesToProcess: Int = -1,
@@ -98,12 +149,16 @@ public object Parsers {
     /**
      * Creates a parser for temperature values.
      *
-     * Uses standard OBD temperature formula: value + offset (typically -40)
+     * Uses standard OBD-II temperature formula: `temperature = rawValue + offset`
      *
-     * @param bytesToProcess Number of bytes to read
-     * @param offset Temperature offset (default -40°C)
-     * @param decimalPlaces Number of decimal places for string representation
-     * @param unit Unit string for the value
+     * The default offset of -40 allows representing temperatures from -40°C to 215°C
+     * with a single byte (standard OBD-II convention).
+     *
+     * @param bytesToProcess Number of bytes to read (default: 1)
+     * @param offset Temperature offset (default: -40 for standard OBD)
+     * @param decimalPlaces Number of decimal places for string representation (default: 1)
+     * @param unit Unit string for the value (default: "°C")
+     * @return Parser that produces [TypedValue.TemperatureValue]
      */
     public fun temperature(
         bytesToProcess: Int = 1,
@@ -123,11 +178,16 @@ public object Parsers {
     /**
      * Creates a parser for pressure values.
      *
-     * @param bytesToProcess Number of bytes to read
-     * @param multiplier Multiplier to apply to raw value
-     * @param offset Offset to add after multiplication
-     * @param decimalPlaces Number of decimal places for string representation
-     * @param unit Unit string for the value
+     * Formula: `pressure = (rawBytes * multiplier) + offset`
+     *
+     * Different PIDs use different multipliers (e.g., fuel pressure uses 3).
+     *
+     * @param bytesToProcess Number of bytes to read (default: 1)
+     * @param multiplier Multiplier to apply to raw value (default: 1)
+     * @param offset Offset to add after multiplication (default: 0)
+     * @param decimalPlaces Number of decimal places for string representation (default: 1)
+     * @param unit Unit string for the value (default: "kPa")
+     * @return Parser that produces [TypedValue.PressureValue]
      */
     public fun pressure(
         bytesToProcess: Int = 1,
@@ -146,11 +206,17 @@ public object Parsers {
     }
 
     /**
-     * Creates a parser that maps raw values to arbitrary values.
+     * Creates a parser that maps raw values to arbitrary result values.
      *
+     * Use this for lookup tables where specific byte values correspond to
+     * specific results (strings, enums, etc.).
+     *
+     * @param T The type of result values
      * @param mapping Map from raw byte values to result values
      * @param default Default value when raw value is not in mapping
-     * @param stringTransform Function to convert value to string representation
+     * @param bytesToProcess Number of bytes to read (default: 1)
+     * @param stringTransform Function to convert value to string (default: toString)
+     * @return Parser that produces appropriate [TypedValue] based on result type
      */
     public fun <T> mapped(
         mapping: Map<Int, T>,
@@ -180,10 +246,15 @@ public object Parsers {
     /**
      * Creates a parser for enum values.
      *
+     * Maps raw byte values to enum constants using the provided mapping.
+     * Returns the default value when the raw value is not in the mapping.
+     *
+     * @param E The enum type
      * @param mapping Map from raw byte values to enum constants
-     * @param default Default enum value when raw value is not in mapping
-     * @param bytesToProcess Number of bytes to read
-     * @param stringTransform Function to convert enum to string representation
+     * @param default Default enum value for unmapped raw values
+     * @param bytesToProcess Number of bytes to read (default: 1)
+     * @param stringTransform Function to convert enum to string (default: name)
+     * @return Parser that produces [TypedValue.EnumValue]
      */
     public fun <E : Enum<E>> enum(
         mapping: Map<Int, E>,
@@ -202,11 +273,15 @@ public object Parsers {
     /**
      * Creates a parser for boolean values based on a bit position.
      *
-     * @param byteIndex Index of the byte to check (0-based from start of data)
-     * @param bitPosition Position of the bit to check (1-based from MSB)
-     * @param bitWidth Total bits in the byte (typically 8)
-     * @param trueString String representation for true
-     * @param falseString String representation for false
+     * Checks a specific bit in the response data. The bit position is 1-based
+     * from the MSB (most significant bit).
+     *
+     * @param byteIndex Index of byte to check (0-based from data start, after mode/PID)
+     * @param bitPosition Position of bit to check (1 = MSB, 8 = LSB)
+     * @param bitWidth Total bits in the byte (default: 8)
+     * @param trueString String representation for true (default: "ON")
+     * @param falseString String representation for false (default: "OFF")
+     * @return Parser that produces [TypedValue.BooleanValue]
      */
     public fun boolean(
         byteIndex: Int = 0,
@@ -227,8 +302,11 @@ public object Parsers {
     /**
      * Creates a parser for duration values in seconds.
      *
-     * @param bytesToProcess Number of bytes to read
-     * @param formatAsTime Whether to format as HH:MM:SS
+     * Optionally formats the result as HH:MM:SS for human-readable display.
+     *
+     * @param bytesToProcess Number of bytes to read (-1 for all data bytes)
+     * @param formatAsTime Whether to format as "HH:MM:SS" (true) or raw seconds (false)
+     * @return Parser that produces [TypedValue.DurationValue]
      */
     public fun duration(
         bytesToProcess: Int = -1,
@@ -244,8 +322,11 @@ public object Parsers {
     /**
      * Creates a parser that extracts raw bytes as a string.
      *
-     * @param bytesToProcess Number of bytes to read (-1 for all)
+     * Useful for VIN, calibration IDs, or other text-based responses.
+     *
+     * @param bytesToProcess Number of bytes to read (-1 for all data bytes)
      * @param startOffset Offset from the start of data bytes
+     * @return Parser that produces [TypedValue.StringValue]
      */
     public fun rawString(
         bytesToProcess: Int = -1,
@@ -262,7 +343,19 @@ public object Parsers {
     /**
      * Creates a parser that combines multiple parsers for multi-value responses.
      *
+     * Use this for commands that return several different values in a single response.
+     * Each parser in the map processes the same raw response independently.
+     *
+     * Example:
+     * ```kotlin
+     * val multiParser = Parsers.composite(mapOf(
+     *     "temperature" to Parsers.temperature(),
+     *     "pressure" to Parsers.pressure()
+     * ))
+     * ```
+     *
      * @param parsers Map of field names to their respective parsers
+     * @return Parser that produces [TypedValue.CompositeValue]
      */
     public fun composite(
         parsers: Map<String, ObdParser<*>>
@@ -280,12 +373,36 @@ public object Parsers {
 
 /**
  * Extension function to transform parser output.
+ *
+ * Creates a new parser that applies a transformation to the result of this parser.
+ *
+ * Example:
+ * ```kotlin
+ * val kelvinParser = Parsers.temperature()
+ *     .map { temp -> TypedValue.TemperatureValue(temp.value + 273.15f, unit = "K") }
+ * ```
+ *
+ * @param T Original value type
+ * @param R Transformed value type
+ * @param transform Transformation function
+ * @return New parser producing transformed values
  */
 public fun <T, R> ObdParser<T>.map(transform: (TypedValue<T>) -> TypedValue<R>): ObdParser<R> =
     ObdParser { rawResponse -> transform(this.parse(rawResponse)) }
 
 /**
  * Extension function to add a unit to parser output.
+ *
+ * Creates a new parser that adds the specified unit to results from this parser.
+ *
+ * Example:
+ * ```kotlin
+ * val speedParser = Parsers.integer(bytesToProcess = 1).withUnit("km/h")
+ * ```
+ *
+ * @param T Value type
+ * @param unit Unit string to add
+ * @return New parser with unit added to results
  */
 public fun <T> ObdParser<T>.withUnit(unit: String): ObdParser<T> =
     ObdParser { rawResponse ->

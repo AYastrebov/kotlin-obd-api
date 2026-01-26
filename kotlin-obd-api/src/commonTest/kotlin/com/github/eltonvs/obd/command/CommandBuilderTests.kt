@@ -195,10 +195,10 @@ class CommandBuilderTests {
             name = "Test Custom"
             mode = "01"
             pid = "00"
-            parseWith { rawResponse ->
+            parseWith(com.github.eltonvs.obd.command.parser.ObdParser { rawResponse ->
                 val value = rawResponse.bufferedValue[2] + rawResponse.bufferedValue[3]
                 TypedValue.IntegerValue(value.toLong())
-            }
+            })
         }
 
         val rawResponse = ObdRawResponse("41001020", 0)

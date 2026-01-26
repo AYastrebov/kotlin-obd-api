@@ -4,14 +4,18 @@ package com.github.eltonvs.obd.command
  * Registry for discovering and managing OBD commands.
  *
  * Provides command discovery by tag, category, and PID, along with
- * registration of custom commands.
+ * registration of custom commands. Commands are stored as factories
+ * to allow creating fresh instances on each retrieval.
  *
  * Example usage:
  * ```kotlin
- * // Register a custom command
- * CommandRegistry.register("CUSTOM_BOOST", CommandCategory.PRESSURE) {
+ * // Register a custom command with explicit metadata
+ * CommandRegistry.register("CUSTOM_BOOST", CommandCategory.PRESSURE, "01", "0A") {
  *     CustomBoostCommand()
  * }
+ *
+ * // Register using command instance (extracts metadata automatically)
+ * CommandRegistry.register(MySpeedCommand()) { MySpeedCommand() }
  *
  * // Get command by tag
  * val command = CommandRegistry.get("CUSTOM_BOOST")
@@ -22,12 +26,16 @@ package com.github.eltonvs.obd.command
  * // Find commands by PID
  * val speedCommands = CommandRegistry.findByPid("01", "0D")
  * ```
+ *
+ * @see CommandCategory
+ * @see registerCommands
+ * @see withTemporaryRegistry
  */
 public object CommandRegistry {
     private val commandFactories = mutableMapOf<String, CommandEntry>()
 
     /**
-     * Entry containing command metadata and factory
+     * Internal entry containing command metadata and factory function.
      */
     private data class CommandEntry(
         val tag: String,
@@ -38,13 +46,16 @@ public object CommandRegistry {
     )
 
     /**
-     * Register a command factory with the registry.
+     * Registers a command factory with explicit metadata.
      *
-     * @param tag Unique identifier for the command
-     * @param category Category for grouping
-     * @param mode Optional OBD mode (for PID-based lookup)
-     * @param pid Optional PID (for PID-based lookup)
-     * @param factory Factory function that creates command instances
+     * Use this method when you want to specify all metadata explicitly,
+     * or when registering commands that don't extend [TypedObdCommand].
+     *
+     * @param tag Unique identifier for the command (used for lookups)
+     * @param category Category for grouping commands
+     * @param mode Optional OBD mode for PID-based lookup (e.g., "01", "22")
+     * @param pid Optional PID for PID-based lookup (e.g., "0D", "1234")
+     * @param factory Factory function that creates new command instances
      */
     public fun register(
         tag: String,
@@ -63,10 +74,15 @@ public object CommandRegistry {
     }
 
     /**
-     * Register a command instance (extracts metadata automatically).
+     * Registers a command using an instance to extract metadata.
      *
-     * @param command Command to register (used as a template)
-     * @param factory Optional factory function; if not provided, a new instance is created via reflection-like behavior
+     * This method automatically extracts tag, mode, pid, and category
+     * from the provided command instance. For [TypedObdCommand] instances,
+     * the category is extracted; otherwise [CommandCategory.UNKNOWN] is used.
+     *
+     * @param command Command instance used as a template for metadata
+     * @param factory Optional factory function; if not provided, the same instance is returned
+     *                (which may cause issues if the command has mutable state)
      */
     public fun register(command: ObdCommand, factory: (() -> ObdCommand)? = null) {
         val category = when (command) {
@@ -84,7 +100,7 @@ public object CommandRegistry {
     }
 
     /**
-     * Unregister a command by its tag.
+     * Unregisters a command by its tag.
      *
      * @param tag The tag of the command to remove
      * @return true if a command was removed, false if no command with that tag existed
@@ -94,20 +110,24 @@ public object CommandRegistry {
     }
 
     /**
-     * Get a command by its tag.
+     * Gets a command by its unique tag.
+     *
+     * Each call creates a new instance using the registered factory.
      *
      * @param tag The unique identifier of the command
-     * @return A new instance of the command, or null if not found
+     * @return A new instance of the command, or null if no command with that tag is registered
      */
     public fun get(tag: String): ObdCommand? {
         return commandFactories[tag]?.factory?.invoke()
     }
 
     /**
-     * Get all commands in a specific category.
+     * Gets all commands in a specific category.
+     *
+     * Each call creates new instances using the registered factories.
      *
      * @param category The category to filter by
-     * @return List of new command instances in the category
+     * @return List of new command instances in the specified category
      */
     public fun getByCategory(category: CommandCategory): List<ObdCommand> {
         return commandFactories.values
@@ -116,11 +136,14 @@ public object CommandRegistry {
     }
 
     /**
-     * Find commands by mode and PID.
+     * Finds commands by OBD mode and PID.
      *
-     * @param mode The OBD mode (e.g., "01", "22")
-     * @param pid The Parameter ID
-     * @return List of new command instances matching the mode/PID
+     * This is useful for discovering which commands handle a specific PID.
+     * Multiple commands may be registered for the same mode/PID combination.
+     *
+     * @param mode The OBD mode (e.g., "01" for current data, "22" for manufacturer-specific)
+     * @param pid The Parameter ID (e.g., "0D" for speed, "0C" for RPM)
+     * @return List of new command instances matching the mode/PID combination
      */
     public fun findByPid(mode: String, pid: String): List<ObdCommand> {
         return commandFactories.values
@@ -129,10 +152,10 @@ public object CommandRegistry {
     }
 
     /**
-     * Find commands by mode only.
+     * Finds all commands for a specific OBD mode.
      *
-     * @param mode The OBD mode (e.g., "01", "22")
-     * @return List of new command instances for the mode
+     * @param mode The OBD mode (e.g., "01", "02", "09", "22")
+     * @return List of new command instances for the specified mode
      */
     public fun findByMode(mode: String): List<ObdCommand> {
         return commandFactories.values
@@ -141,7 +164,7 @@ public object CommandRegistry {
     }
 
     /**
-     * Get all registered command tags.
+     * Gets all registered command tags.
      *
      * @return Set of all registered tags
      */
@@ -150,7 +173,7 @@ public object CommandRegistry {
     }
 
     /**
-     * Get all registered categories that have at least one command.
+     * Gets all categories that have at least one registered command.
      *
      * @return Set of categories with registered commands
      */
@@ -159,7 +182,7 @@ public object CommandRegistry {
     }
 
     /**
-     * Check if a command with the given tag is registered.
+     * Checks if a command with the given tag is registered.
      *
      * @param tag The tag to check
      * @return true if a command with that tag is registered
@@ -169,55 +192,90 @@ public object CommandRegistry {
     }
 
     /**
-     * Get the total number of registered commands.
+     * Gets the total number of registered commands.
+     *
+     * @return Number of commands in the registry
      */
     public fun size(): Int = commandFactories.size
 
     /**
-     * Clear all registered commands.
+     * Clears all registered commands from the registry.
+     *
+     * Use with caution in production code. Primarily useful for testing.
      */
     public fun clear() {
         commandFactories.clear()
     }
 
     /**
-     * Create a snapshot of the current registry state.
-     * Useful for testing or temporary modifications.
+     * Creates a snapshot of the current registry state.
      *
-     * @return A map of tag to CommandEntry
+     * Use this with [restore] to save and restore registry state,
+     * particularly useful in testing scenarios.
+     *
+     * @return An opaque snapshot object that can be passed to [restore]
+     * @see restore
+     * @see withTemporaryRegistry
      */
-    internal fun snapshot(): Map<String, CommandEntry> {
-        return commandFactories.toMap()
+    public fun snapshot(): RegistrySnapshot {
+        return RegistrySnapshot(commandFactories.toMap())
     }
 
     /**
-     * Restore registry state from a snapshot.
+     * Restores registry state from a previously captured snapshot.
      *
-     * @param snapshot Previously captured snapshot
+     * All current registrations are replaced with those from the snapshot.
+     *
+     * @param snapshot Previously captured snapshot from [snapshot]
+     * @see snapshot
+     * @see withTemporaryRegistry
      */
-    internal fun restore(snapshot: Map<String, CommandEntry>) {
+    public fun restore(snapshot: RegistrySnapshot) {
         commandFactories.clear()
-        commandFactories.putAll(snapshot)
+        @Suppress("UNCHECKED_CAST")
+        commandFactories.putAll(snapshot.data as Map<String, CommandEntry>)
     }
+
+    /**
+     * Opaque snapshot of registry state for save/restore operations.
+     *
+     * This class is intentionally opaque to prevent external manipulation
+     * of registry internals.
+     *
+     * @see CommandRegistry.snapshot
+     * @see CommandRegistry.restore
+     */
+    public class RegistrySnapshot internal constructor(internal val data: Any)
 }
 
 /**
- * DSL for bulk registration of commands.
+ * DSL builder for bulk registration of commands.
+ *
+ * Use this with [registerCommands] to register multiple commands
+ * in a clean, declarative style.
  *
  * Example:
  * ```kotlin
  * registerCommands {
  *     command("SPEED", CommandCategory.ENGINE, "01", "0D") { SpeedCommand() }
  *     command("RPM", CommandCategory.ENGINE, "01", "0C") { RPMCommand() }
- *     command("COOLANT_TEMP", CommandCategory.TEMPERATURE, "01", "05") { EngineCoolantTemperatureCommand() }
+ *     command("COOLANT_TEMP", CommandCategory.TEMPERATURE, "01", "05") { CoolantTempCommand() }
  * }
  * ```
+ *
+ * @see registerCommands
  */
 public class CommandRegistrationBuilder {
     internal val registrations = mutableListOf<() -> Unit>()
 
     /**
-     * Register a command with full metadata.
+     * Registers a command with explicit metadata.
+     *
+     * @param tag Unique identifier for the command
+     * @param category Category for grouping
+     * @param mode Optional OBD mode for PID-based lookup
+     * @param pid Optional PID for PID-based lookup
+     * @param factory Factory function that creates command instances
      */
     public fun command(
         tag: String,
@@ -232,7 +290,10 @@ public class CommandRegistrationBuilder {
     }
 
     /**
-     * Register a command instance.
+     * Registers a command using an instance for metadata extraction.
+     *
+     * @param command Command instance used as template
+     * @param factory Optional factory function for creating instances
      */
     public fun command(command: ObdCommand, factory: (() -> ObdCommand)? = null) {
         registrations.add {
@@ -242,7 +303,21 @@ public class CommandRegistrationBuilder {
 }
 
 /**
- * Bulk register commands using DSL syntax.
+ * Bulk registers commands using DSL syntax.
+ *
+ * This function provides a clean way to register multiple commands at once.
+ *
+ * Example:
+ * ```kotlin
+ * registerCommands {
+ *     command("SPEED", CommandCategory.ENGINE, "01", "0D") { SpeedCommand() }
+ *     command("RPM", CommandCategory.ENGINE, "01", "0C") { RPMCommand() }
+ *     command(MyCoolantTempCommand()) { MyCoolantTempCommand() }
+ * }
+ * ```
+ *
+ * @param block Builder block for registering commands
+ * @see CommandRegistrationBuilder
  */
 public fun registerCommands(block: CommandRegistrationBuilder.() -> Unit) {
     val builder = CommandRegistrationBuilder()
@@ -251,18 +326,32 @@ public fun registerCommands(block: CommandRegistrationBuilder.() -> Unit) {
 }
 
 /**
- * Execute a block with a temporary registry state.
- * Restores the original state after the block completes.
+ * Executes a block with a temporary registry state.
  *
- * Useful for testing:
+ * The current registry state is saved before executing the block and
+ * automatically restored after the block completes (even if an exception is thrown).
+ *
+ * This is particularly useful for testing scenarios where you need to
+ * register test commands without affecting other tests.
+ *
+ * Example:
  * ```kotlin
- * withTemporaryRegistry {
+ * @Test
+ * fun testMyCommand() = withTemporaryRegistry {
+ *     // Register test commands
  *     CommandRegistry.register("TEST", CommandCategory.CUSTOM) { TestCommand() }
- *     // test code here
- * } // original registry state restored
+ *
+ *     // Run tests
+ *     val cmd = CommandRegistry.get("TEST")
+ *     assertNotNull(cmd)
+ * } // Original registry state is restored here
  * ```
+ *
+ * @param T The return type of the block
+ * @param block The block to execute with temporary registry state
+ * @return The result of executing the block
  */
-public inline fun <T> withTemporaryRegistry(block: () -> T): T {
+public fun <T> withTemporaryRegistry(block: () -> T): T {
     val snapshot = CommandRegistry.snapshot()
     return try {
         block()

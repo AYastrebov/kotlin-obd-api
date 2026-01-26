@@ -60,7 +60,7 @@ class TypedObdCommandTests {
     }
 
     @Test
-    fun `PercentageObdCommand 100%`() {
+    fun `PercentageObdCommand 100 percent`() {
         val command = TestPercentageCommand()
         val rawResponse = ObdRawResponse("4104FF", 0) // 255 = 100%
         val response = command.handleResponse(rawResponse)

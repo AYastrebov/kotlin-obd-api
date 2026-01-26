@@ -55,7 +55,7 @@ class ObdResponseTypedValueTests {
             value = "3.14",
             typedValue = TypedValue.FloatValue(3.14f, decimalPlaces = 2)
         )
-        assertEquals(3.14f, response.asFloat(), 0.001f)
+        assertEquals(3.14f, response.asFloat()!!, 0.001f)
         assertNull(response.asInt())
     }
 
@@ -68,7 +68,7 @@ class ObdResponseTypedValueTests {
             unit = "%",
             typedValue = TypedValue.PercentageValue(75.5f, decimalPlaces = 1)
         )
-        assertEquals(75.5f, response.asPercentage(), 0.01f)
+        assertEquals(75.5f, response.asPercentage()!!, 0.01f)
     }
 
     @Test
@@ -80,7 +80,7 @@ class ObdResponseTypedValueTests {
             unit = "°C",
             typedValue = TypedValue.TemperatureValue(85.0f, decimalPlaces = 1)
         )
-        assertEquals(85.0f, response.asTemperature(), 0.01f)
+        assertEquals(85.0f, response.asTemperature()!!, 0.01f)
     }
 
     @Test
@@ -92,7 +92,7 @@ class ObdResponseTypedValueTests {
             unit = "kPa",
             typedValue = TypedValue.PressureValue(101.3f, decimalPlaces = 1)
         )
-        assertEquals(101.3f, response.asPressure(), 0.01f)
+        assertEquals(101.3f, response.asPressure()!!, 0.01f)
     }
 
     @Test

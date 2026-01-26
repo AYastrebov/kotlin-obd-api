@@ -14,7 +14,7 @@ public abstract class ObdCommand {
     public val rawCommand: String
         get() = listOf(mode, pid).joinToString(" ")
 
-    public fun handleResponse(rawResponse: ObdRawResponse): ObdResponse {
+    public open fun handleResponse(rawResponse: ObdRawResponse): ObdResponse {
         val checkedRawResponse = BadResponseException.checkForExceptions(this, rawResponse)
         return ObdResponse(
             command = this,
