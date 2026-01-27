@@ -18,14 +18,14 @@ pluginManagement {
 
 
 plugins {
-    id("com.gradle.develocity") version ("4.0.1")
+    id("com.gradle.develocity") version ("4.3.1")
 }
 
 develocity {
     buildScan {
         termsOfUseUrl = "https://gradle.com/terms-of-service"
         termsOfUseAgree = "yes"
-        publishing.onlyIf { false }
+        publishing.onlyIf { System.getenv("CI") != null }
     }
 }
 
