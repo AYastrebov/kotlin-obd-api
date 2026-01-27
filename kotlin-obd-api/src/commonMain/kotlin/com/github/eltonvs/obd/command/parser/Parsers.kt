@@ -406,17 +406,5 @@ public fun <T, R> ObdParser<T>.map(transform: (TypedValue<T>) -> TypedValue<R>):
  */
 public fun <T> ObdParser<T>.withUnit(unit: String): ObdParser<T> =
     ObdParser { rawResponse ->
-        when (val result = this.parse(rawResponse)) {
-            is TypedValue.IntegerValue -> result.copy(unit = unit) as TypedValue<T>
-            is TypedValue.FloatValue -> result.copy(unit = unit) as TypedValue<T>
-            is TypedValue.PercentageValue -> result.copy(unit = unit) as TypedValue<T>
-            is TypedValue.TemperatureValue -> result.copy(unit = unit) as TypedValue<T>
-            is TypedValue.PressureValue -> result.copy(unit = unit) as TypedValue<T>
-            is TypedValue.StringValue -> result.copy(unit = unit) as TypedValue<T>
-            is TypedValue.EnumValue<*> -> (result as TypedValue.EnumValue<Nothing>).copy(unit = unit) as TypedValue<T>
-            is TypedValue.BooleanValue -> result.copy(unit = unit) as TypedValue<T>
-            is TypedValue.ListValue<*> -> (result as TypedValue.ListValue<Nothing>).copy(unit = unit) as TypedValue<T>
-            is TypedValue.CompositeValue -> result.copy(unit = unit) as TypedValue<T>
-            is TypedValue.DurationValue -> result.copy(unit = unit) as TypedValue<T>
-        }
+        this.parse(rawResponse).withUnit(unit)
     }

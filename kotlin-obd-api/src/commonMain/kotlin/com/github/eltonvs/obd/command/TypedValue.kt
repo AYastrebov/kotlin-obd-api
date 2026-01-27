@@ -47,6 +47,14 @@ public sealed class TypedValue<out T> {
     public open val unit: String = ""
 
     /**
+     * Creates a copy of this value with a different unit string.
+     *
+     * @param newUnit The new unit string to use
+     * @return A new TypedValue with the updated unit
+     */
+    public abstract fun withUnit(newUnit: String): TypedValue<T>
+
+    /**
      * Represents an integer value using Long for wide range support.
      *
      * Use this for whole number values like speed, RPM, distance, etc.
@@ -59,7 +67,9 @@ public sealed class TypedValue<out T> {
         override val value: Long,
         override val stringValue: String = value.toString(),
         override val unit: String = ""
-    ) : TypedValue<Long>()
+    ) : TypedValue<Long>() {
+        override fun withUnit(newUnit: String): TypedValue<Long> = copy(unit = newUnit)
+    }
 
     /**
      * Represents a floating-point value with configurable decimal places.
@@ -88,6 +98,8 @@ public sealed class TypedValue<out T> {
             stringValue = formatToDecimalPlaces(value, decimalPlaces),
             unit = unit
         )
+
+        override fun withUnit(newUnit: String): TypedValue<Float> = copy(unit = newUnit)
     }
 
     /**
@@ -115,6 +127,8 @@ public sealed class TypedValue<out T> {
             value = value,
             stringValue = formatToDecimalPlaces(value, decimalPlaces)
         )
+
+        override fun withUnit(newUnit: String): TypedValue<Float> = copy(unit = newUnit)
     }
 
     /**
@@ -143,6 +157,8 @@ public sealed class TypedValue<out T> {
             stringValue = formatToDecimalPlaces(value, decimalPlaces),
             unit = unit
         )
+
+        override fun withUnit(newUnit: String): TypedValue<Float> = copy(unit = newUnit)
     }
 
     /**
@@ -169,6 +185,8 @@ public sealed class TypedValue<out T> {
             stringValue = formatToDecimalPlaces(value, decimalPlaces),
             unit = unit
         )
+
+        override fun withUnit(newUnit: String): TypedValue<Float> = copy(unit = newUnit)
     }
 
     /**
@@ -184,7 +202,9 @@ public sealed class TypedValue<out T> {
         override val value: String,
         override val stringValue: String = value,
         override val unit: String = ""
-    ) : TypedValue<String>()
+    ) : TypedValue<String>() {
+        override fun withUnit(newUnit: String): TypedValue<String> = copy(unit = newUnit)
+    }
 
     /**
      * Represents an enumeration value for commands that return discrete states.
@@ -201,7 +221,9 @@ public sealed class TypedValue<out T> {
         override val value: E,
         override val stringValue: String = value.name,
         override val unit: String = ""
-    ) : TypedValue<E>()
+    ) : TypedValue<E>() {
+        override fun withUnit(newUnit: String): TypedValue<E> = copy(unit = newUnit)
+    }
 
     /**
      * Represents a boolean on/off value.
@@ -216,7 +238,9 @@ public sealed class TypedValue<out T> {
         override val value: Boolean,
         override val stringValue: String = value.toString(),
         override val unit: String = ""
-    ) : TypedValue<Boolean>()
+    ) : TypedValue<Boolean>() {
+        override fun withUnit(newUnit: String): TypedValue<Boolean> = copy(unit = newUnit)
+    }
 
     /**
      * Represents a list of values for commands that return multiple items.
@@ -243,6 +267,8 @@ public sealed class TypedValue<out T> {
             value = value,
             stringValue = value.joinToString(separator)
         )
+
+        override fun withUnit(newUnit: String): TypedValue<List<T>> = copy(unit = newUnit)
     }
 
     /**
@@ -259,7 +285,9 @@ public sealed class TypedValue<out T> {
         override val value: Map<String, Any>,
         override val stringValue: String,
         override val unit: String = ""
-    ) : TypedValue<Map<String, Any>>()
+    ) : TypedValue<Map<String, Any>>() {
+        override fun withUnit(newUnit: String): TypedValue<Map<String, Any>> = copy(unit = newUnit)
+    }
 
     /**
      * Represents a duration/time value in seconds.
@@ -293,5 +321,7 @@ public sealed class TypedValue<out T> {
                 seconds.toString()
             }
         )
+
+        override fun withUnit(newUnit: String): TypedValue<Long> = copy(unit = newUnit)
     }
 }
