@@ -60,9 +60,6 @@ public abstract class BaseTroubleCodesCommand : ObdCommand() {
 
     public abstract val carriageNumberPattern: Regex
 
-    public var troubleCodesList: List<String> = listOf()
-        private set
-
     override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<List<String>> {
         val codes = parseTroubleCodesList(rawResponse.value)
         return TypedValue.ListValue(codes, separator = ",")
@@ -87,9 +84,7 @@ public abstract class BaseTroubleCodesCommand : ObdCommand() {
         }
 
         val idx = troubleCodesList.indexOf("P0000")
-        return (if (idx < 0) troubleCodesList else troubleCodesList.take(idx)).also {
-            this.troubleCodesList = it
-        }
+        return if (idx < 0) troubleCodesList else troubleCodesList.take(idx)
     }
 
     protected companion object {

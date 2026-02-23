@@ -15,6 +15,36 @@ public fun <T> T.pipe(vararg functions: (T) -> T): T =
     functions.fold(this) { value, f -> f(value) }
 
 /**
+ * Functional interface for processing raw OBD response strings.
+ *
+ * Implement this interface to customize how raw response data is cleaned
+ * before parsing. This allows supporting different adapter types beyond ELM327.
+ */
+public fun interface ResponseProcessor {
+    /**
+     * Process a raw response string and return the cleaned result.
+     *
+     * @param raw The raw response string from the adapter
+     * @return The processed string ready for parsing
+     */
+    public fun process(raw: String): String
+}
+
+/**
+ * Default response processor implementing the ELM327 3-step pipeline:
+ * 1. Remove whitespace
+ * 2. Remove bus initialization messages
+ * 3. Remove colons
+ */
+public object DefaultResponseProcessor : ResponseProcessor {
+    override fun process(raw: String): String = raw.pipe(
+        { removeAll(WHITESPACE_PATTERN, it) },
+        { removeAll(BUS_INIT_PATTERN, it) },
+        { removeAll(COLON_PATTERN, it) }
+    )
+}
+
+/**
  * Represents a raw response received from the OBD adapter.
  *
  * This class handles the initial processing of the raw string response,
@@ -23,45 +53,20 @@ public fun <T> T.pipe(vararg functions: (T) -> T): T =
  *
  * @property value The raw string response from the OBD adapter
  * @property elapsedTime Time in milliseconds taken to receive the response
+ * @property responseProcessor The processor to use for cleaning the raw response
  */
 public data class ObdRawResponse(
     val value: String,
-    val elapsedTime: Long
+    val elapsedTime: Long,
+    val responseProcessor: ResponseProcessor = DefaultResponseProcessor
 ) {
-    private val valueProcessorPipeline: Array<(String) -> String> by lazy {
-        arrayOf<(String) -> String>(
-            {
-                /*
-                 * Imagine the following response 41 0c 00 0d.
-                 *
-                 * ELM sends strings!! So, ELM puts spaces between each "byte". And pay
-                 * attention to the fact that I've put the word byte in quotes, because 41
-                 * is actually TWO bytes (two chars) in the socket. So, we must do some more
-                 * processing...
-                 */
-                removeAll(WHITESPACE_PATTERN, it) // removes all [ \t\n\x0B\f\r]
-            },
-            {
-                /*
-                 * Data may have echo or informative text like "INIT BUS..." or similar.
-                 * The response ends with two carriage return characters. So we need to take
-                 * everything from the last carriage return before those two (trimmed above).
-                 */
-                removeAll(BUS_INIT_PATTERN, it)
-            },
-            {
-                removeAll(COLON_PATTERN, it)
-            }
-        )
-    }
-
     /**
      * The response value after processing (whitespace and bus init messages removed).
      *
      * This is a cleaned-up version of the raw value with all whitespace,
      * bus initialization messages, and colons removed.
      */
-    public val processedValue: String by lazy { value.pipe(*valueProcessorPipeline) }
+    public val processedValue: String by lazy { responseProcessor.process(value) }
 
     /**
      * The response as an array of integer byte values.

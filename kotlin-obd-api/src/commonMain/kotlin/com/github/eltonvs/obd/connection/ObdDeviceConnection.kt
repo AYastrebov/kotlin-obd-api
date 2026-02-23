@@ -8,19 +8,23 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.io.InternalIoApi
 import kotlinx.io.Sink
 import kotlinx.io.Source
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 
 public class ObdDeviceConnection(
     private val inputStream: Source,
     private val outputStream: Sink,
-    private val maxCacheSize: Int = 100
+    private val maxCacheSize: Int = 100,
+    private val cacheTtlMs: Long = 0
 ) : AutoCloseable {
-    private val responseCache = mutableMapOf<String, ObdRawResponse>()
+    private val responseCache = mutableMapOf<String, CacheEntry>()
     private val cacheAccessOrder = mutableListOf<String>()
     private val cacheMutex = Mutex()
+
+    private class CacheEntry(val response: ObdRawResponse, val timestamp: TimeMark)
 
     /**
      * Closes the connection and clears the response cache.
@@ -42,7 +46,7 @@ public class ObdDeviceConnection(
             cacheAccessOrder.remove(key)
             // Add to end (most recently used)
             cacheAccessOrder.add(key)
-            responseCache[key] = value
+            responseCache[key] = CacheEntry(value, TimeSource.Monotonic.markNow())
             // Evict oldest if over capacity
             while (cacheAccessOrder.size > maxCacheSize) {
                 val oldest = cacheAccessOrder.removeFirst()
@@ -53,11 +57,16 @@ public class ObdDeviceConnection(
 
     private suspend fun getFromCache(key: String): ObdRawResponse? {
         return cacheMutex.withLock {
-            val value = responseCache[key] ?: return@withLock null
+            val entry = responseCache[key] ?: return@withLock null
+            if (cacheTtlMs > 0 && entry.timestamp.elapsedNow().inWholeMilliseconds >= cacheTtlMs) {
+                responseCache.remove(key)
+                cacheAccessOrder.remove(key)
+                return@withLock null
+            }
             // Move to end (most recently used)
             cacheAccessOrder.remove(key)
             cacheAccessOrder.add(key)
-            value
+            entry.response
         }
     }
 
@@ -106,7 +115,6 @@ public class ObdDeviceConnection(
         }
     }
 
-    @OptIn(InternalIoApi::class)
     private suspend fun readRawData(maxRetries: Int, retryDelayMs: Long): String {
         var b: Byte
         var c: Char
@@ -116,7 +124,7 @@ public class ObdDeviceConnection(
         return withContext(Dispatchers.Default) {
             // read until '>' arrives OR end of stream reached (-1)
             while (retriesCount <= maxRetries) {
-                if (inputStream.buffer.size > 0) {
+                if (inputStream.request(1)) {
                     b = inputStream.readByte()
                     if (b < 0) {
                         break

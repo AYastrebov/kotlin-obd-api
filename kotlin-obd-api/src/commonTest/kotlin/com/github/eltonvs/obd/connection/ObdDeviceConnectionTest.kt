@@ -5,6 +5,7 @@ import com.github.eltonvs.obd.command.ObdRawResponse
 import com.github.eltonvs.obd.command.TypedValue
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.Buffer
 import kotlinx.io.Source
@@ -208,5 +209,66 @@ class ObdDeviceConnectionTest {
         val command2 = TestCommand(mode = "01", pid = "01")
 
         assertNotEquals(command1.rawCommand, command2.rawCommand)
+    }
+
+    @Test
+    fun `test cache TTL zero behaves as no expiration`() = runTest {
+        val inputStream = createMockInputStream("410000000001")
+        val outputStream = createMockOutputStream()
+        val connection = ObdDeviceConnection(inputStream, outputStream, maxCacheSize = 10, cacheTtlMs = 0)
+        val command = TestCommand(mode = "01", pid = "00")
+
+        val response1 = connection.run(command, useCache = true)
+        assertEquals("410000000001", response1.value)
+
+        // With TTL=0, cache never expires
+        delay(50)
+        val response2 = connection.run(command, useCache = true)
+        assertEquals("410000000001", response2.value)
+    }
+
+    @Test
+    fun `test cache TTL expires entries`() = runTest {
+        // Create a buffer with two responses
+        val buffer = Buffer()
+        buffer.write("410000000001>410000000002>".encodeToByteArray())
+        val outputStream = createMockOutputStream()
+        // TTL of 1ms — by the time the second run() executes, real wall-clock time will have passed
+        val connection = ObdDeviceConnection(buffer, outputStream, maxCacheSize = 10, cacheTtlMs = 1)
+        val command = TestCommand(mode = "01", pid = "00")
+
+        val response1 = connection.run(command, useCache = true)
+        assertEquals("410000000001", response1.value)
+
+        // Use withContext to ensure some real time passes on Dispatchers.Default
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            kotlinx.coroutines.delay(5)
+        }
+
+        // Cache entry should be expired; re-reads from stream getting second response
+        val response2 = connection.run(command, useCache = true)
+        assertEquals("410000000002", response2.value)
+    }
+
+    @Test
+    fun `test empty stream returns empty response`() = runTest {
+        val inputStream = createMockInputStream("")
+        val outputStream = createMockOutputStream()
+        val connection = ObdDeviceConnection(inputStream, outputStream)
+
+        val response = connection.run(TestCommand())
+
+        assertEquals("", response.value)
+    }
+
+    @Test
+    fun `test response with only whitespace`() = runTest {
+        val inputStream = createMockInputStream("   ")
+        val outputStream = createMockOutputStream()
+        val connection = ObdDeviceConnection(inputStream, outputStream)
+
+        val response = connection.run(TestCommand())
+
+        assertEquals("", response.value)
     }
 }

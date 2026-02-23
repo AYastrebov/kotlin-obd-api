@@ -15,13 +15,10 @@ public abstract class BaseMonitorStatus : ObdCommand() {
     override val defaultUnit: String = ""
     override val category: CommandCategory = CommandCategory.CONTROL
 
-    private var _data: SensorStatusData? = null
-    public val data: SensorStatusData? get() = _data
-
     override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> {
-        parseData(rawResponse.bufferedValue.takeLast(4))
+        val data = parseData(rawResponse.bufferedValue.takeLast(4))
         val map = mutableMapOf<String, Any>()
-        _data?.let { d ->
+        data?.let { d ->
             map["milOn"] = d.milOn
             map["dtcCount"] = d.dtcCount
             map["isSpark"] = d.isSpark
@@ -44,9 +41,9 @@ public abstract class BaseMonitorStatus : ObdCommand() {
      * 10000011 00000111 11111111 00000000
      *  [# DTC] X        [supprt] [~ready]
      */
-    private fun parseData(values: List<Int>) {
+    private fun parseData(values: List<Int>): SensorStatusData? {
         if (values.size != 4) {
-            return
+            return null
         }
         val milOn = values[0].getBitAt(1, 8) == 1
         val dtcCount = values[0] and 0x7F
@@ -65,7 +62,7 @@ public abstract class BaseMonitorStatus : ObdCommand() {
                 monitorMap[it] = SensorStatus(isAvailable, isComplete)
             }
         }
-        _data = SensorStatusData(milOn, dtcCount, isSpark, monitorMap)
+        return SensorStatusData(milOn, dtcCount, isSpark, monitorMap)
     }
 }
 

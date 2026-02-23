@@ -45,6 +45,14 @@ Full list of supported commands.
 | `0F` | `AIR_INTAKE_TEMPERATURE` | Air Intake Temperature |
 | `10` | `MAF` | Mass Air Flow |
 | `11` | `THROTTLE_POSITION` | Throttle Position |
+| `14` | `O2_VOLTAGE_BANK_1_SENSOR_1` | O2 Sensor Voltage Bank 1 Sensor 1 (voltage + fuel trim) |
+| `15` | `O2_VOLTAGE_BANK_1_SENSOR_2` | O2 Sensor Voltage Bank 1 Sensor 2 (voltage + fuel trim) |
+| `16` | `O2_VOLTAGE_BANK_1_SENSOR_3` | O2 Sensor Voltage Bank 1 Sensor 3 (voltage + fuel trim) |
+| `17` | `O2_VOLTAGE_BANK_1_SENSOR_4` | O2 Sensor Voltage Bank 1 Sensor 4 (voltage + fuel trim) |
+| `18` | `O2_VOLTAGE_BANK_2_SENSOR_1` | O2 Sensor Voltage Bank 2 Sensor 1 (voltage + fuel trim) |
+| `19` | `O2_VOLTAGE_BANK_2_SENSOR_2` | O2 Sensor Voltage Bank 2 Sensor 2 (voltage + fuel trim) |
+| `1A` | `O2_VOLTAGE_BANK_2_SENSOR_3` | O2 Sensor Voltage Bank 2 Sensor 3 (voltage + fuel trim) |
+| `1B` | `O2_VOLTAGE_BANK_2_SENSOR_4` | O2 Sensor Voltage Bank 2 Sensor 4 (voltage + fuel trim) |
 | `1F` | `ENGINE_RUNTIME` | Engine Runtime |
 | `21` | `DISTANCE_TRAVELED_MIL_ON` | Distance traveled with MIL on |
 | `22` | `FUEL_RAIL_PRESSURE` | Fuel Rail Pressure |
@@ -74,6 +82,17 @@ Full list of supported commands.
 | `52` | `ETHANOL_LEVEL` | Ethanol Level |
 | `5C` | `ENGINE_OIL_TEMPERATURE` | Engine Oil Temperature |
 | `5E` | `FUEL_CONSUMPTION_RATE` | Fuel Consumption Rate |
+
+
+## Mode 02
+
+| Name | Description |
+| :- | :- |
+| `FREEZE_FRAME_SPEED` | Freeze Frame Vehicle Speed |
+| `FREEZE_FRAME_ENGINE_RPM` | Freeze Frame Engine RPM |
+| `FREEZE_FRAME_ENGINE_COOLANT_TEMPERATURE` | Freeze Frame Engine Coolant Temperature |
+
+> **Note:** Any Mode 01 command can be wrapped with `FreezeFrameCommand(baseCommand)` to query freeze frame data.
 
 
 ## Mode 03

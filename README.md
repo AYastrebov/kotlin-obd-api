@@ -158,12 +158,14 @@ class CustomSpeedCommand : IntegerObdCommand() {
 | `PressureObdCommand` | Pressure calculations |
 | `BooleanObdCommand` | Binary flags |
 | `DurationObdCommand` | Time values |
+| `EnumObdCommand<E>` | Enumeration values |
 
 ## Supported OBD Modes
 
 | Mode | Description |
 |------|-------------|
 | **01** | Current/live data - 50+ PIDs (speed, RPM, temperatures, fuel, etc.) |
+| **02** | Freeze frame data - parameter values captured at DTC storage time |
 | **03** | Read stored trouble codes (DTCs) |
 | **04** | Clear trouble codes and MIL |
 | **07** | Read pending trouble codes |

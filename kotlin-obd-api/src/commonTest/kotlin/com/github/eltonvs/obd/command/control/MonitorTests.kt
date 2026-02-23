@@ -73,6 +73,20 @@ private val expected5 = SensorStatusData(
     )
 )
 
+@Suppress("UNCHECKED_CAST")
+private fun assertMonitorData(rawValue: String, expected: SensorStatusData, command: BaseMonitorStatus) {
+    val rawResponse = ObdRawResponse(value = rawValue, elapsedTime = 0)
+    val obdResponse = command.handleResponse(rawResponse)
+    val composite = obdResponse.asComposite()!!
+    val actual = SensorStatusData(
+        milOn = composite["milOn"] as Boolean,
+        dtcCount = composite["dtcCount"] as Int,
+        isSpark = composite["isSpark"] as Boolean,
+        items = composite["items"] as Map<Monitors, SensorStatus>
+    )
+    assertEquals(expected, actual, "Failed for: $rawValue")
+}
+
 class MonitorStatusSinceCodesClearedCommandTests {
     @Test
     fun `test valid monitor status since CC responses handler`() {
@@ -87,11 +101,7 @@ class MonitorStatusSinceCodesClearedCommandTests {
             "41 01 00 07 EB C8" to expected3,
             "0007EBC8" to expected3
         ).forEach { (rawValue, expected) ->
-            val rawResponse = ObdRawResponse(value = rawValue, elapsedTime = 0)
-            val obdResponse = MonitorStatusSinceCodesClearedCommand().also {
-                it.handleResponse(rawResponse)
-            }
-            assertEquals(expected, obdResponse.data, "Failed for: $rawValue")
+            assertMonitorData(rawValue, expected, MonitorStatusSinceCodesClearedCommand())
         }
     }
 }
@@ -110,11 +120,7 @@ class MonitorStatusCurrentDriveCycleCommandTests {
             "41 41 00 48 21 35" to expected5,
             "00482135" to expected5
         ).forEach { (rawValue, expected) ->
-            val rawResponse = ObdRawResponse(value = rawValue, elapsedTime = 0)
-            val obdResponse = MonitorStatusCurrentDriveCycleCommand().also {
-                it.handleResponse(rawResponse)
-            }
-            assertEquals(expected, obdResponse.data, "Failed for: $rawValue")
+            assertMonitorData(rawValue, expected, MonitorStatusCurrentDriveCycleCommand())
         }
     }
 }
