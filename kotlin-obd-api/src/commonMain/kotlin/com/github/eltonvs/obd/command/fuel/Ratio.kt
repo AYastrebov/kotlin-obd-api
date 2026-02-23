@@ -1,35 +1,30 @@
 package com.github.eltonvs.obd.command.fuel
 
-import com.github.eltonvs.obd.command.ObdCommand
-import com.github.eltonvs.obd.command.ObdRawResponse
-import com.github.eltonvs.obd.command.bytesToInt
-import com.github.eltonvs.obd.command.formatToDecimalPlaces
+import com.github.eltonvs.obd.command.*
 
 
-private fun calculateFuelAirRatio(rawValue: IntArray): Float = bytesToInt(rawValue, bytesToProcess = 2) * (2 / 65_536f)
-
-public class CommandedEquivalenceRatioCommand : ObdCommand() {
+public class CommandedEquivalenceRatioCommand : FloatObdCommand() {
     override val tag: String = "COMMANDED_EQUIVALENCE_RATIO"
     override val name: String = "Fuel-Air Commanded Equivalence Ratio"
     override val mode: String = "01"
     override val pid: String = "44"
-
     override val defaultUnit: String = "F/A"
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse ->
-        formatToDecimalPlaces(calculateFuelAirRatio(it.bufferedValue), 2)
-    }
+    override val bytesToProcess: Int = 2
+    override val multiplier: Float = 2 / 65_536f
+    override val decimalPlaces: Int = 2
+    override val category: CommandCategory = CommandCategory.FUEL
 }
 
-public class FuelAirEquivalenceRatioCommand(oxygenSensor: OxygenSensor) : ObdCommand() {
+public class FuelAirEquivalenceRatioCommand(oxygenSensor: OxygenSensor) : FloatObdCommand() {
     override val tag: String = "FUEL_AIR_EQUIVALENCE_RATIO_${oxygenSensor.name}"
     override val name: String = "Fuel-Air Equivalence Ratio - ${oxygenSensor.displayName}"
     override val mode: String = "01"
     override val pid: String = oxygenSensor.pid
-
     override val defaultUnit: String = "F/A"
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse ->
-        formatToDecimalPlaces(calculateFuelAirRatio(it.bufferedValue), 2)
-    }
+    override val bytesToProcess: Int = 2
+    override val multiplier: Float = 2 / 65_536f
+    override val decimalPlaces: Int = 2
+    override val category: CommandCategory = CommandCategory.FUEL
 
     public enum class OxygenSensor(public val displayName: String, internal val pid: String) {
         OXYGEN_SENSOR_1("Oxygen Sensor 1", "34"),

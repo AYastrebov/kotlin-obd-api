@@ -3,6 +3,7 @@ package com.github.eltonvs.obd.command.at
 import com.github.eltonvs.obd.command.ATCommand
 import com.github.eltonvs.obd.command.ObdProtocols
 import com.github.eltonvs.obd.command.ObdRawResponse
+import com.github.eltonvs.obd.command.TypedValue
 
 
 public class DescribeProtocolCommand : ATCommand() {
@@ -16,12 +17,14 @@ public class DescribeProtocolNumberCommand : ATCommand() {
     override val name: String = "Describe Protocol Number"
     override val pid: String = "DPN"
 
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse -> parseProtocolNumber(it).displayName }
+    override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<String> {
+        val protocol = parseProtocolNumber(rawResponse)
+        return TypedValue.StringValue(protocol.displayName)
+    }
 
     private fun parseProtocolNumber(rawResponse: ObdRawResponse): ObdProtocols {
         val result = rawResponse.value
         val protocolNumber = result[if (result.length == 2) 1 else 0].toString()
-
         return ObdProtocols.values().find { it.command == protocolNumber } ?: ObdProtocols.UNKNOWN
     }
 }
@@ -31,7 +34,8 @@ public class IgnitionMonitorCommand : ATCommand() {
     override val name: String = "Ignition Monitor"
     override val pid: String = "IGN"
 
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse -> it.value.trim().uppercase() }
+    override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<String> =
+        TypedValue.StringValue(rawResponse.value.trim().uppercase())
 }
 
 public class AdapterVoltageCommand : ATCommand() {

@@ -100,11 +100,11 @@ The `ObdResponse` object provides:
 | `rawResponse` | `ObdRawResponse` | Raw hex data from the vehicle |
 | `value` | `String` | Parsed human-readable value |
 | `unit` | `String` | Unit of measurement (Km/h, RPM, °C, etc.) |
-| `typedValue` | `TypedValue<T>?` | Strongly-typed value (for type-safe commands) |
+| `typedValue` | `TypedValue<T>` | Strongly-typed value |
 
 ## Type-Safe Commands
 
-For type safety, use commands that extend `TypedObdCommand`. These return `TypedValue` responses:
+All commands return `TypedValue` responses:
 
 ```kotlin
 val response = obdConnection.run(SpeedCommand())
@@ -128,25 +128,10 @@ when (val typed = response.typedValue) {
 - `BooleanValue` - Binary flags (MIL status)
 - `StringValue` - Text values (VIN)
 - `ListValue` - Lists (trouble codes)
+- `EnumValue` - Enumeration values (fuel type)
+- `CompositeValue` - Map of named values (monitor status)
 
 ## Custom Commands
-
-### Simple Command (String-based)
-
-```kotlin
-class CustomCommand : ObdCommand() {
-    override val tag = "CUSTOM_COMMAND"
-    override val name = "Custom Command"
-    override val mode = "01"
-    override val pid = "FF"
-    override val defaultUnit = ""
-    override val handler = { it: ObdRawResponse ->
-        "Parsed: ${it.processedValue}"
-    }
-}
-```
-
-### Type-Safe Command (Recommended)
 
 Extend one of the base classes for automatic parsing:
 

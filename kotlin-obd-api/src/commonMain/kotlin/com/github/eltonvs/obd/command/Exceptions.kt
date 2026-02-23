@@ -13,7 +13,7 @@ import com.github.eltonvs.obd.command.RegexPatterns.WHITESPACE_PATTERN
 
 private fun String.sanitize(): String = removeAll(WHITESPACE_PATTERN, this).uppercase()
 
-public abstract class BadResponseException(private val command: ObdCommand, private val response: ObdRawResponse) :
+public abstract class BadResponseException(public val command: ObdCommand, public val response: ObdRawResponse) :
     RuntimeException() {
     public companion object {
         public fun checkForExceptions(command: ObdCommand, response: ObdRawResponse): ObdRawResponse =

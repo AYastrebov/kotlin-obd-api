@@ -270,19 +270,6 @@ class CommandBuilderTests {
     }
 
     @Test
-    fun `typedObdCommand returns TypedObdCommand`() {
-        val command = typedObdCommand {
-            tag = "TEST"
-            name = "Test"
-            mode = "01"
-            pid = "0D"
-            parseAsInteger(bytesToProcess = 1)
-        }
-
-        assertTrue(command is TypedObdCommand<*>)
-    }
-
-    @Test
     fun `skipDigitCheck is configurable`() {
         val command = obdCommand {
             tag = "TEST"

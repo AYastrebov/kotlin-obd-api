@@ -2,6 +2,7 @@ package com.github.eltonvs.obd.connection
 
 import com.github.eltonvs.obd.command.ObdCommand
 import com.github.eltonvs.obd.command.ObdRawResponse
+import com.github.eltonvs.obd.command.TypedValue
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
@@ -39,7 +40,8 @@ private class TestCommand(
     override val tag: String = "TEST"
     override val name: String = "Test Command"
     override val skipDigitCheck: Boolean = true
-    override val handler: (ObdRawResponse) -> String = { it.value }
+    override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> =
+        TypedValue.StringValue(rawResponse.value)
 }
 
 class ObdDeviceConnectionTest {

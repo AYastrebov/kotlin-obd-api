@@ -23,7 +23,7 @@ import com.github.eltonvs.obd.command.parser.Parsers
  * ```
  *
  * @see obdCommand
- * @see typedObdCommand
+ * @see obdCommand
  */
 public class ObdCommandBuilder {
     /**
@@ -306,10 +306,9 @@ public class ObdCommandBuilder {
     }
 
     /**
-     * Configure a custom handler function (for backward compatibility).
+     * Configure a custom string handler.
      *
-     * This creates a string-based parser for legacy code patterns.
-     * The result will be wrapped in [TypedValue.StringValue].
+     * This creates a string-based parser. The result will be wrapped in [TypedValue.StringValue].
      *
      * @param handler Function that transforms raw response to string
      */
@@ -371,7 +370,7 @@ internal class DslObdCommand(
     override val category: CommandCategory,
     override val skipDigitCheck: Boolean,
     private val parser: ObdParser<*>
-) : TypedObdCommand<Any>() {
+) : ObdCommand() {
 
     /**
      * Parses the raw response using the configured parser.
@@ -379,9 +378,8 @@ internal class DslObdCommand(
      * @param rawResponse The raw response from the OBD adapter
      * @return Typed value from the parser
      */
-    override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<Any> {
-        @Suppress("UNCHECKED_CAST")
-        return parser.parse(rawResponse) as TypedValue<Any>
+    override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> {
+        return parser.parse(rawResponse)
     }
 }
 
@@ -416,29 +414,3 @@ internal class DslObdCommand(
 public fun obdCommand(block: ObdCommandBuilder.() -> Unit): ObdCommand =
     ObdCommandBuilder().apply(block).build()
 
-/**
- * Creates a typed OBD command using a DSL builder.
- *
- * This variant returns a [TypedObdCommand] for cases where you need
- * access to the typed command interface (e.g., for category access).
- *
- * Example:
- * ```kotlin
- * val typedCommand = typedObdCommand {
- *     tag = "MY_COMMAND"
- *     name = "My Command"
- *     mode = "01"
- *     pid = "0D"
- *     category = CommandCategory.ENGINE
- *     parseAsInteger(bytesToProcess = 1)
- * }
- *
- * println(typedCommand.category)  // ENGINE
- * ```
- *
- * @param block Configuration block for the command builder
- * @return A new [TypedObdCommand] with the specified configuration
- * @see obdCommand
- */
-public fun typedObdCommand(block: ObdCommandBuilder.() -> Unit): TypedObdCommand<*> =
-    ObdCommandBuilder().apply(block).build() as TypedObdCommand<*>

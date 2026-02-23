@@ -9,12 +9,13 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.io.InternalIoApi
+import kotlinx.io.Sink
 import kotlinx.io.Source
 
 
 public class ObdDeviceConnection(
     private val inputStream: Source,
-    private val outputStream: Source,
+    private val outputStream: Sink,
     private val maxCacheSize: Int = 100
 ) : AutoCloseable {
     private val responseCache = mutableMapOf<String, ObdRawResponse>()
@@ -95,11 +96,10 @@ public class ObdDeviceConnection(
 
     // Note: Dispatchers.Default is used instead of Dispatchers.IO for Kotlin Multiplatform
     // compatibility. kotlinx-io buffers are non-blocking and work efficiently on Default.
-    @OptIn(InternalIoApi::class)
     private suspend fun sendCommand(command: ObdCommand, delayTime: Long) {
         withContext(Dispatchers.Default) {
-            outputStream.buffer.write("${command.rawCommand}\r".encodeToByteArray())
-            outputStream.buffer.flush()
+            outputStream.write("${command.rawCommand}\r".encodeToByteArray())
+            outputStream.flush()
             if (delayTime > 0) {
                 delay(delayTime)
             }

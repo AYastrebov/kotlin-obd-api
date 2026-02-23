@@ -20,7 +20,7 @@ package com.github.eltonvs.obd.command
  *
  * @param T The underlying Kotlin type of the value (Long, Float, String, etc.)
  * @see ObdResponse.typedValue
- * @see TypedObdCommand
+ * @see ObdCommand
  */
 public sealed class TypedValue<out T> {
     /**

@@ -20,10 +20,10 @@ package com.github.eltonvs.obd.command
  * }
  * ```
  *
- * @see TypedObdCommand
+ * @see ObdCommand
  * @see TypedValue.IntegerValue
  */
-public abstract class IntegerObdCommand : TypedObdCommand<Long>() {
+public abstract class IntegerObdCommand : ObdCommand() {
     /**
      * Number of bytes to process from the response.
      *
@@ -92,10 +92,10 @@ public abstract class IntegerObdCommand : TypedObdCommand<Long>() {
  * }
  * ```
  *
- * @see TypedObdCommand
+ * @see ObdCommand
  * @see TypedValue.PercentageValue
  */
-public abstract class PercentageObdCommand : TypedObdCommand<Float>() {
+public abstract class PercentageObdCommand : ObdCommand() {
     /**
      * Number of bytes to process from the response.
      *
@@ -144,10 +144,10 @@ public abstract class PercentageObdCommand : TypedObdCommand<Float>() {
  * }
  * ```
  *
- * @see TypedObdCommand
+ * @see ObdCommand
  * @see TypedValue.TemperatureValue
  */
-public abstract class TemperatureObdCommand : TypedObdCommand<Float>() {
+public abstract class TemperatureObdCommand : ObdCommand() {
     /**
      * Temperature offset applied to the raw value.
      *
@@ -204,10 +204,10 @@ public abstract class TemperatureObdCommand : TypedObdCommand<Float>() {
  * }
  * ```
  *
- * @see TypedObdCommand
+ * @see ObdCommand
  * @see TypedValue.PressureValue
  */
-public abstract class PressureObdCommand : TypedObdCommand<Float>() {
+public abstract class PressureObdCommand : ObdCommand() {
     /**
      * Number of bytes to process from the response.
      */
@@ -278,10 +278,10 @@ public abstract class PressureObdCommand : TypedObdCommand<Float>() {
  * ```
  *
  * @param E The enum type this command returns
- * @see TypedObdCommand
+ * @see ObdCommand
  * @see TypedValue.EnumValue
  */
-public abstract class EnumObdCommand<E : Enum<E>> : TypedObdCommand<E>() {
+public abstract class EnumObdCommand<E : Enum<E>> : ObdCommand() {
     /**
      * Mapping from raw byte values to enum constants.
      *
@@ -353,10 +353,10 @@ public abstract class EnumObdCommand<E : Enum<E>> : TypedObdCommand<E>() {
  * }
  * ```
  *
- * @see TypedObdCommand
+ * @see ObdCommand
  * @see TypedValue.BooleanValue
  */
-public abstract class BooleanObdCommand : TypedObdCommand<Boolean>() {
+public abstract class BooleanObdCommand : ObdCommand() {
     /**
      * String representation for true value.
      *
@@ -417,10 +417,10 @@ public abstract class BooleanObdCommand : TypedObdCommand<Boolean>() {
  * }
  * ```
  *
- * @see TypedObdCommand
+ * @see ObdCommand
  * @see TypedValue.DurationValue
  */
-public abstract class DurationObdCommand : TypedObdCommand<Long>() {
+public abstract class DurationObdCommand : ObdCommand() {
     /**
      * Number of bytes to process from the response.
      *
@@ -473,10 +473,10 @@ public abstract class DurationObdCommand : TypedObdCommand<Long>() {
  * }
  * ```
  *
- * @see TypedObdCommand
+ * @see ObdCommand
  * @see TypedValue.FloatValue
  */
-public abstract class FloatObdCommand : TypedObdCommand<Float>() {
+public abstract class FloatObdCommand : ObdCommand() {
     /**
      * Number of bytes to process from the response.
      */

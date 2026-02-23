@@ -1,167 +1,74 @@
-# Kotlin OBD API
+# CLAUDE.md
 
-A Kotlin Multiplatform library for communicating with OBD-II (On-Board Diagnostics) vehicle adapters.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-This library provides a developer-friendly interface to execute OBD commands, parse responses, and access vehicle diagnostic data (speed, RPM, temperature, fuel level, trouble codes, etc.) without dealing with low-level protocol details.
+Kotlin Multiplatform library for communicating with OBD-II vehicle adapters. Provides a type-safe interface to execute OBD commands, parse hex responses, and access vehicle diagnostic data.
 
-**Supported Platforms:** JVM, Android, iOS, macOS, Linux, Windows, JS, WebAssembly
+**Platforms:** JVM, Android, iOS, macOS, Linux, Windows, JS, WebAssembly
 
-## Quick Reference
-
-### Build & Test
+## Build & Test Commands
 
 ```bash
-./gradlew build          # Build all targets
-./gradlew allTests       # Run all tests
-./gradlew dokkaGenerate  # Generate documentation
+./gradlew build                                   # Build all targets
+./gradlew allTests                                # Run all platform tests
+./gradlew :kotlin-obd-api:jvmTest                 # Run JVM tests only (fastest)
+./gradlew :kotlin-obd-api:jvmTest --tests "com.github.eltonvs.obd.command.engine.EngineTests"  # Single test class
+./gradlew dokkaGenerate                           # Generate API docs
 ```
 
-### Project Structure
-
-```
-kotlin-obd-api/
-├── kotlin-obd-api/src/
-│   ├── commonMain/kotlin/com/github/eltonvs/obd/
-│   │   ├── command/           # Command framework
-│   │   │   ├── ObdCommand.kt         # Base class for all commands
-│   │   │   ├── TypedObdCommand.kt    # Type-safe command base
-│   │   │   ├── CommonCommands.kt     # Abstract base commands
-│   │   │   ├── CommandRegistry.kt    # Command discovery
-│   │   │   ├── Response.kt           # ObdRawResponse & ObdResponse
-│   │   │   ├── TypedValue.kt         # Sealed class for typed responses
-│   │   │   ├── Exceptions.kt         # Exception hierarchy
-│   │   │   ├── engine/               # Speed, RPM, load commands
-│   │   │   ├── temperature/          # Temperature commands
-│   │   │   ├── pressure/             # Pressure commands
-│   │   │   ├── fuel/                 # Fuel-related commands
-│   │   │   ├── control/              # Diagnostic commands
-│   │   │   └── at/                   # ELM327 AT commands
-│   │   └── connection/
-│   │       └── ObdDeviceConnection.kt  # I/O handler with caching
-│   └── commonTest/kotlin/     # Shared test suite
-├── build.gradle.kts           # Root build configuration
-└── gradle/libs.versions.toml  # Dependency versions
-```
+The project is a single Gradle module at `:kotlin-obd-api`. Root project name is `obd-api`.
 
 ## Architecture
 
-### Core Classes
+### Unified command system
 
-| Class | Purpose |
-|-------|---------|
-| `ObdCommand` | Abstract base for all OBD commands (tag, name, mode, pid) |
-| `TypedObdCommand<T>` | Type-safe command returning `TypedValue<T>` |
-| `ObdDeviceConnection` | Handles I/O with adapter, manages LRU cache |
-| `ObdRawResponse` | Raw hex response with lazy processing pipeline |
-| `ObdResponse` | Processed response with value, unit, and typed value |
-| `CommandRegistry` | Static registry for command discovery by mode/pid |
+`ObdCommand` is the single abstract base class. All commands implement `parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*>` to return typed responses. The `handleResponse()` method calls `parseTypedValue()` and wraps the result in `ObdResponse`.
 
-### TypedValue Hierarchy
+### Command class hierarchy
 
-```kotlin
-TypedValue<T>
-├── IntegerValue(Long)
-├── FloatValue(Float)
-├── PercentageValue(Float)
-├── TemperatureValue(Float)
-├── PressureValue(Float)
-├── StringValue(String)
-├── EnumValue<E : Enum<E>>
-├── BooleanValue(Boolean)
-├── ListValue<T>(List<T>)
-├── CompositeValue(Map<String, Any>)
-└── DurationValue(Long - seconds)
+`ObdCommand` → abstract base commands in `CommonCommands.kt`:
+- `IntegerObdCommand`, `FloatObdCommand`, `PercentageObdCommand`, `TemperatureObdCommand`, `PressureObdCommand`, `EnumObdCommand<E>`, `BooleanObdCommand`, `DurationObdCommand`
+
+Each base command computes its value from formula properties (`bytesToProcess`, `multiplier`, `offset`, etc.) — override properties instead of implementing `parseTypedValue` directly.
+
+### Response processing pipeline
+
+```
+Raw hex string → ObdRawResponse(value, elapsedTime)
+  → processedValue (lazy): remove whitespace → remove bus init → remove colons
+  → bufferedValue (lazy): chunked hex pairs → IntArray
+  → command.handleResponse() → ObdResponse(value, unit, typedValue)
 ```
 
-### Abstract Base Commands
+### Connection
 
-Extend these for custom commands:
+`ObdDeviceConnection` takes `Source` (input) and `Sink` (output) from kotlinx-io. Uses `>` as response delimiter. Has LRU cache (mutex-protected) for repeated command reads. All I/O uses `Dispatchers.Default` (not IO) for multiplatform compatibility.
 
-| Class | Use Case |
-|-------|----------|
-| `IntegerObdCommand` | Whole numbers (speed, RPM, distance) |
-| `PercentageObdCommand` | Percentages (0-100 range) |
-| `TemperatureObdCommand` | Temperature with -40°C offset |
-| `PressureObdCommand` | Pressure calculations |
-| `EnumObdCommand<E>` | Discrete states (fuel type) |
-| `BooleanObdCommand` | Binary flags (MIL status) |
-| `DurationObdCommand` | Time values (runtime) |
-| `FloatObdCommand` | Decimal values (voltage, MAF) |
+### Command registration
+
+`CommandRegistry` provides static discovery by mode/pid. Commands register via `CommandRegistry.register(tag, category, mode, pid) { Factory() }`.
 
 ## Code Conventions
 
-- **Kotlin style** enforced via explicit API mode
-- **Java 17** toolchain
-- **Sealed classes** for exhaustive type checking
-- **Suspend functions** for all I/O operations
-- **Mutex** for thread-safe cache access
-- Package structure by functionality (engine, temperature, pressure, fuel)
+- **Explicit API mode** — all public declarations need explicit visibility modifiers
+- **Java 17 toolchain**
+- Package structure by functionality: `engine/`, `temperature/`, `pressure/`, `fuel/`, `control/`, `at/`, `egr/`
+- All I/O operations are `suspend` functions
+- Tests use `runTest` from kotlinx-coroutines-test and `Buffer` from kotlinx-io for mock streams
+- Test files live in `commonTest/kotlin/` — shared across all platforms
 
-## Key Dependencies
+## Key File Paths
 
-| Dependency | Purpose |
-|------------|---------|
-| `kotlinx-coroutines-core` (1.10.2) | Async/suspend functions |
-| `kotlinx-io-core` (0.8.2) | Multiplatform I/O |
-| `kotlin-test` | Testing framework |
-
-## Creating Custom Commands
-
-### Simple (string-based):
-```kotlin
-class CustomCommand : ObdCommand() {
-    override val tag = "CUSTOM"
-    override val name = "Custom Command"
-    override val mode = "01"
-    override val pid = "FF"
-    override val defaultUnit = "unit"
-    override val handler: (ObdRawResponse) -> String = { "parsed value" }
-}
-```
-
-### Type-safe (recommended):
-```kotlin
-class CustomCommand : IntegerObdCommand() {
-    override val tag = "CUSTOM"
-    override val name = "Custom"
-    override val mode = "01"
-    override val pid = "FF"
-    override val defaultUnit = "unit"
-    override val bytesToProcess = 2
-    override val multiplier = 0.5f
-    override val category = CommandCategory.ENGINE
-}
-```
-
-### Registration:
-```kotlin
-CommandRegistry.register("CUSTOM", CommandCategory.ENGINE, "01", "FF") { CustomCommand() }
-```
-
-## Testing
-
-Tests are in `commonTest/kotlin/` using `runTest` for coroutines. Mock streams using `Buffer` from kotlinx-io.
-
-```bash
-./gradlew allTests                              # All platforms
-./gradlew commonTest --tests "*ConnectionTest*" # Specific test
-```
-
-## Response Processing Pipeline
-
-```
-Raw Hex → Remove whitespace → Remove "SEARCHING" → Remove bus init messages
-→ Remove colons → Convert to IntArray → Parse with handler → ObdResponse
-```
-
-## OBD Modes Supported
-
-- **Mode 01**: Current/live data (100+ PIDs)
-- **Mode 03**: Read trouble codes (DTCs)
-- **Mode 04**: Clear trouble codes
-- **Mode 07**: Pending trouble codes
-- **Mode 09**: VIN and vehicle info
-- **Mode 0A**: Permanent trouble codes
-- **AT Commands**: ELM327 adapter configuration
+| File | Purpose |
+|------|---------|
+| `kotlin-obd-api/src/commonMain/kotlin/com/github/eltonvs/obd/command/ObdCommand.kt` | Base command class with parseTypedValue |
+| `kotlin-obd-api/src/commonMain/kotlin/com/github/eltonvs/obd/command/TypedObdCommand.kt` | CommandCategory enum |
+| `kotlin-obd-api/src/commonMain/kotlin/com/github/eltonvs/obd/command/CommonCommands.kt` | All abstract base commands (Integer, Float, Percentage, etc.) |
+| `kotlin-obd-api/src/commonMain/kotlin/com/github/eltonvs/obd/command/Response.kt` | ObdRawResponse, ObdResponse, processing pipeline |
+| `kotlin-obd-api/src/commonMain/kotlin/com/github/eltonvs/obd/command/TypedValue.kt` | Sealed TypedValue hierarchy |
+| `kotlin-obd-api/src/commonMain/kotlin/com/github/eltonvs/obd/connection/ObdDeviceConnection.kt` | I/O + caching |
+| `kotlin-obd-api/src/commonMain/kotlin/com/github/eltonvs/obd/command/CommandRegistry.kt` | Command discovery |
+| `kotlin-obd-api/build.gradle.kts` | Build config, publishing, Dokka |
+| `gradle/libs.versions.toml` | Dependency versions |

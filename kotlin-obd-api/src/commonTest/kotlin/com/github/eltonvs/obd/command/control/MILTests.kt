@@ -1,6 +1,7 @@
 package com.github.eltonvs.obd.command.control
 
 import com.github.eltonvs.obd.command.ObdRawResponse
+import com.github.eltonvs.obd.command.TypedValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -36,9 +37,9 @@ class MILOnCommandTests {
             "" to false           // Empty response
         ).forEach { (rawValue, expected) ->
             val rawResponse = ObdRawResponse(value = rawValue, elapsedTime = 0)
-            // Test the handler directly to bypass validation (which would throw for invalid responses)
-            val result = command.handler(rawResponse)
-            assertEquals(expected.toString(), result, "Handler failed for short response: '$rawValue'")
+            // Test parseTypedValue directly to bypass validation (which would throw for invalid responses)
+            val result = command.parseTypedValue(rawResponse)
+            assertEquals(expected, (result as TypedValue.BooleanValue).value, "parseTypedValue failed for short response: '$rawValue'")
         }
     }
 

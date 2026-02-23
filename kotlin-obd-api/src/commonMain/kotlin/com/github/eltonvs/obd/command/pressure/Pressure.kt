@@ -1,59 +1,53 @@
 package com.github.eltonvs.obd.command.pressure
 
-import com.github.eltonvs.obd.command.ObdCommand
-import com.github.eltonvs.obd.command.ObdRawResponse
-import com.github.eltonvs.obd.command.bytesToInt
-import com.github.eltonvs.obd.command.formatToDecimalPlaces
+import com.github.eltonvs.obd.command.CommandCategory
+import com.github.eltonvs.obd.command.IntegerObdCommand
+import com.github.eltonvs.obd.command.PressureObdCommand
 
-
-public class BarometricPressureCommand : ObdCommand() {
+public class BarometricPressureCommand : PressureObdCommand() {
     override val tag: String = "BAROMETRIC_PRESSURE"
     override val name: String = "Barometric Pressure"
     override val mode: String = "01"
     override val pid: String = "33"
-
-    override val defaultUnit: String = "kPa"
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse -> bytesToInt(it.bufferedValue, bytesToProcess = 1).toString() }
+    override val bytesToProcess: Int = 1
+    override val decimalPlaces: Int = 0
 }
 
-public class IntakeManifoldPressureCommand : ObdCommand() {
+public class IntakeManifoldPressureCommand : PressureObdCommand() {
     override val tag: String = "INTAKE_MANIFOLD_PRESSURE"
     override val name: String = "Intake Manifold Pressure"
     override val mode: String = "01"
     override val pid: String = "0B"
-
-    override val defaultUnit: String = "kPa"
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse -> bytesToInt(it.bufferedValue, bytesToProcess = 1).toString() }
+    override val bytesToProcess: Int = 1
+    override val decimalPlaces: Int = 0
 }
 
-public class FuelPressureCommand : ObdCommand() {
+public class FuelPressureCommand : PressureObdCommand() {
     override val tag: String = "FUEL_PRESSURE"
     override val name: String = "Fuel Pressure"
     override val mode: String = "01"
     override val pid: String = "0A"
-
-    override val defaultUnit: String = "kPa"
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse -> (bytesToInt(it.bufferedValue, bytesToProcess = 1) * 3).toString() }
+    override val bytesToProcess: Int = 1
+    override val multiplier: Float = 3f
+    override val decimalPlaces: Int = 0
 }
 
-public class FuelRailPressureCommand : ObdCommand() {
+public class FuelRailPressureCommand : PressureObdCommand() {
     override val tag: String = "FUEL_RAIL_PRESSURE"
     override val name: String = "Fuel Rail Pressure"
     override val mode: String = "01"
     override val pid: String = "22"
-
-    override val defaultUnit: String = "kPa"
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse ->
-        formatToDecimalPlaces(bytesToInt(it.bufferedValue) * 0.079f, 3)
-    }
+    override val bytesToProcess: Int = -1
+    override val multiplier: Float = 0.079f
+    override val decimalPlaces: Int = 3
 }
 
-public class FuelRailGaugePressureCommand : ObdCommand() {
+public class FuelRailGaugePressureCommand : PressureObdCommand() {
     override val tag: String = "FUEL_RAIL_GAUGE_PRESSURE"
     override val name: String = "Fuel Rail Gauge Pressure"
     override val mode: String = "01"
     override val pid: String = "23"
-
-    override val defaultUnit: String = "kPa"
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse -> (bytesToInt(it.bufferedValue) * 10).toString() }
+    override val bytesToProcess: Int = -1
+    override val multiplier: Float = 10f
+    override val decimalPlaces: Int = 0
 }

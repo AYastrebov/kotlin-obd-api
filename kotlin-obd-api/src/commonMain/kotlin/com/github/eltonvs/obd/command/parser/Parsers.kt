@@ -227,20 +227,10 @@ public object Parsers {
         val rawValue = bytesToInt(rawResponse.bufferedValue, bytesToProcess = bytesToProcess).toInt()
         val value = mapping[rawValue] ?: default
         @Suppress("UNCHECKED_CAST")
-        when (value) {
-            is Enum<*> -> TypedValue.EnumValue(
-                value = value as Nothing,
-                stringValue = stringTransform(value)
-            )
-            is String -> TypedValue.StringValue(
-                value = value,
-                stringValue = stringTransform(value)
-            ) as TypedValue<T>
-            else -> TypedValue.StringValue(
-                value = stringTransform(value),
-                stringValue = stringTransform(value)
-            ) as TypedValue<T>
-        }
+        TypedValue.StringValue(
+            value = stringTransform(value),
+            stringValue = stringTransform(value)
+        ) as TypedValue<T>
     }
 
     /**

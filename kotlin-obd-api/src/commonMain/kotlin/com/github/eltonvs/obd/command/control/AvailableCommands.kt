@@ -1,9 +1,6 @@
 package com.github.eltonvs.obd.command.control
 
-import com.github.eltonvs.obd.command.ObdCommand
-import com.github.eltonvs.obd.command.ObdRawResponse
-import com.github.eltonvs.obd.command.formatToHex
-import com.github.eltonvs.obd.command.getBitAt
+import com.github.eltonvs.obd.command.*
 
 
 public class AvailablePIDsCommand(private val range: AvailablePIDsRanges) : ObdCommand() {
@@ -11,10 +8,15 @@ public class AvailablePIDsCommand(private val range: AvailablePIDsRanges) : ObdC
     override val name: String = "Available Commands - ${range.displayName}"
     override val mode: String = "01"
     override val pid: String = range.pid
-
     override val defaultUnit: String = ""
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse ->
-        parsePIDs(it.processedValue).joinToString(",") { it.formatToHex() }
+    override val category: CommandCategory = CommandCategory.CONTROL
+
+    override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<List<Int>> {
+        val pids = parsePIDs(rawResponse.processedValue)
+        return TypedValue.ListValue(
+            value = pids.toList(),
+            stringValue = pids.joinToString(",") { it.formatToHex() }
+        )
     }
 
     private fun parsePIDs(rawValue: String): IntArray {

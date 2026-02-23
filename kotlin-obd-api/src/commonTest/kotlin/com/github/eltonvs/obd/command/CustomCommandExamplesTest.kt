@@ -452,7 +452,7 @@ class CustomCommandExamplesTest {
     /**
      * Example: Command that returns multiple sensor values as a composite
      */
-    class MultiSensorCommand : TypedObdCommand<Map<String, Any>>() {
+    class MultiSensorCommand : ObdCommand() {
         override val tag = "MULTI_SENSOR"
         override val name = "Multi Sensor Pack"
         override val mode = "22"
@@ -460,7 +460,7 @@ class CustomCommandExamplesTest {
         override val defaultUnit = ""
         override val category = CommandCategory.CUSTOM
 
-        override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<Map<String, Any>> {
+        override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> {
             val bytes = rawResponse.bufferedValue
 
             // Parse multiple values from the response
@@ -500,7 +500,7 @@ class CustomCommandExamplesTest {
     /**
      * Example: Command with conditional parsing based on response content
      */
-    class ConditionalParsingCommand : TypedObdCommand<String>() {
+    class ConditionalParsingCommand : ObdCommand() {
         override val tag = "CONDITIONAL"
         override val name = "Conditional Parser"
         override val mode = "01"
@@ -508,7 +508,7 @@ class CustomCommandExamplesTest {
         override val defaultUnit = ""
         override val category = CommandCategory.DIAGNOSTIC
 
-        override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<String> {
+        override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> {
             val bytes = rawResponse.bufferedValue
             val code = bytes.getOrElse(2) { 0 }
 

@@ -5,6 +5,9 @@ import kotlin.math.roundToInt
 import kotlin.time.TimeSource
 
 internal fun formatToDecimalPlaces(value: Float, decimalPlaces: Int): String {
+    if (decimalPlaces == 0) {
+        return value.roundToInt().toString()
+    }
     val multiplier = 10.0.pow(decimalPlaces).toFloat()
     val rounded = (value * multiplier).roundToInt() / multiplier
     val str = rounded.toString()

@@ -12,6 +12,8 @@ class TestCommand : ObdCommand() {
     override val name: String = "Test Command"
     override val mode: String = "01"
     override val pid: String = "00"
+    override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> =
+        TypedValue.StringValue(rawResponse.value)
 }
 
 class NoDataExceptionTests {

@@ -9,18 +9,22 @@ public abstract class ObdCommand {
 
     public open val defaultUnit: String = ""
     public open val skipDigitCheck: Boolean = false
-    public open val handler: (ObdRawResponse) -> String = { it.value }
+    public open val category: CommandCategory = CommandCategory.UNKNOWN
 
     public val rawCommand: String
         get() = listOf(mode, pid).joinToString(" ")
 
+    public abstract fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*>
+
     public open fun handleResponse(rawResponse: ObdRawResponse): ObdResponse {
         val checkedRawResponse = BadResponseException.checkForExceptions(this, rawResponse)
+        val typedValue = parseTypedValue(checkedRawResponse)
         return ObdResponse(
             command = this,
             rawResponse = checkedRawResponse,
-            value = handler(checkedRawResponse),
-            unit = defaultUnit
+            value = typedValue.stringValue,
+            unit = defaultUnit,
+            typedValue = typedValue
         )
     }
 

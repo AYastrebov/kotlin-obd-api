@@ -1,9 +1,6 @@
 package com.github.eltonvs.obd.command.control
 
-import com.github.eltonvs.obd.command.Monitors
-import com.github.eltonvs.obd.command.ObdCommand
-import com.github.eltonvs.obd.command.ObdRawResponse
-import com.github.eltonvs.obd.command.getBitAt
+import com.github.eltonvs.obd.command.*
 
 public data class SensorStatus(val available: Boolean, val complete: Boolean)
 public data class SensorStatusData(
@@ -15,14 +12,23 @@ public data class SensorStatusData(
 
 public abstract class BaseMonitorStatus : ObdCommand() {
     override val mode: String = "01"
-
     override val defaultUnit: String = ""
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse ->
-        parseData(it.bufferedValue.takeLast(4)).let { "" }
-    }
+    override val category: CommandCategory = CommandCategory.CONTROL
 
     private var _data: SensorStatusData? = null
     public val data: SensorStatusData? get() = _data
+
+    override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> {
+        parseData(rawResponse.bufferedValue.takeLast(4))
+        val map = mutableMapOf<String, Any>()
+        _data?.let { d ->
+            map["milOn"] = d.milOn
+            map["dtcCount"] = d.dtcCount
+            map["isSpark"] = d.isSpark
+            map["items"] = d.items
+        }
+        return TypedValue.CompositeValue(map, stringValue = "")
+    }
 
     /**
      * Parses the Monitor Status data

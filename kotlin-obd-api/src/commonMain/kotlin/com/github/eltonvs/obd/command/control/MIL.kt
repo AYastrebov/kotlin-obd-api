@@ -1,45 +1,39 @@
 package com.github.eltonvs.obd.command.control
 
-import com.github.eltonvs.obd.command.ObdCommand
-import com.github.eltonvs.obd.command.ObdRawResponse
-import com.github.eltonvs.obd.command.ObdResponse
-import com.github.eltonvs.obd.command.bytesToInt
+import com.github.eltonvs.obd.command.*
 
 
-public class MILOnCommand : ObdCommand() {
+public class MILOnCommand : BooleanObdCommand() {
     override val tag: String = "MIL_ON"
     override val name: String = "MIL on"
     override val mode: String = "01"
     override val pid: String = "01"
 
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse ->
-        val mil = it.bufferedValue.getOrElse(2) { 0 }
-        val milOn = (mil and 0x80) == 128
-        milOn.toString()
+    override fun evaluateBoolean(rawResponse: ObdRawResponse): Boolean {
+        val mil = rawResponse.bufferedValue.getOrElse(2) { 0 }
+        return (mil and 0x80) == 128
     }
 
     override fun format(response: ObdResponse): String {
-        val milOn = response.value.toBoolean()
+        val milOn = response.asBoolean() ?: false
         return "MIL is ${if (milOn) "ON" else "OFF"}"
     }
 }
 
-public class DistanceMILOnCommand : ObdCommand() {
+public class DistanceMILOnCommand : IntegerObdCommand() {
     override val tag: String = "DISTANCE_TRAVELED_MIL_ON"
     override val name: String = "Distance traveled with MIL on"
     override val mode: String = "01"
     override val pid: String = "21"
-
     override val defaultUnit: String = "Km"
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse -> bytesToInt(it.bufferedValue).toString() }
+    override val category: CommandCategory = CommandCategory.CONTROL
 }
 
-public class TimeSinceMILOnCommand : ObdCommand() {
+public class TimeSinceMILOnCommand : IntegerObdCommand() {
     override val tag: String = "TIME_TRAVELED_MIL_ON"
     override val name: String = "Time run with MIL on"
     override val mode: String = "01"
     override val pid: String = "4D"
-
     override val defaultUnit: String = "min"
-    override val handler: (ObdRawResponse) -> String = { it: ObdRawResponse -> bytesToInt(it.bufferedValue).toString() }
+    override val category: CommandCategory = CommandCategory.CONTROL
 }

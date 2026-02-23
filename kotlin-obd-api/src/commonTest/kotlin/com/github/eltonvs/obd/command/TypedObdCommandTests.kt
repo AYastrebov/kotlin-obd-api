@@ -22,14 +22,6 @@ class TypedObdCommandTests {
     }
 
     @Test
-    fun `TypedObdCommand handler bridges to parseTypedValue`() {
-        val command = TestTypedIntegerCommand()
-        val rawResponse = ObdRawResponse("410D64", 0)
-        val handlerResult = command.handler(rawResponse)
-        assertEquals("100", handlerResult)
-    }
-
-    @Test
     fun `IntegerObdCommand parses simple value`() {
         val command = TestIntegerCommand()
         val rawResponse = ObdRawResponse("410D64", 0)
@@ -117,7 +109,7 @@ class TypedObdCommandTests {
     }
 
     // Test command implementations
-    private class TestTypedIntegerCommand : TypedObdCommand<Long>() {
+    private class TestTypedIntegerCommand : ObdCommand() {
         override val tag = "TEST_TYPED"
         override val name = "Test Typed"
         override val mode = "01"
@@ -125,7 +117,7 @@ class TypedObdCommandTests {
         override val defaultUnit = "Km/h"
         override val category = CommandCategory.ENGINE
 
-        override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<Long> {
+        override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> {
             val value = bytesToInt(rawResponse.bufferedValue, bytesToProcess = 1)
             return TypedValue.IntegerValue(value, unit = defaultUnit)
         }

@@ -100,16 +100,15 @@ public data class ObdRawResponse(
  * @property rawResponse The raw response from the OBD adapter
  * @property value The parsed string value for display
  * @property unit The unit string (e.g., "km/h", "%", "°C")
- * @property typedValue Optional strongly-typed value for type-safe access
+ * @property typedValue Strongly-typed value for type-safe access
  * @see TypedValue
- * @see TypedObdCommand
  */
 public data class ObdResponse(
     val command: ObdCommand,
     val rawResponse: ObdRawResponse,
     val value: String,
     val unit: String = "",
-    val typedValue: TypedValue<*>? = null
+    val typedValue: TypedValue<*> = TypedValue.StringValue(value)
 ) {
     /**
      * The formatted value including unit, using the command's format method.

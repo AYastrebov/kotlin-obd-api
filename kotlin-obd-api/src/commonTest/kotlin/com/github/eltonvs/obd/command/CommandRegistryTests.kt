@@ -181,5 +181,7 @@ class CommandRegistryTests {
         override val name = "Test Command"
         override val mode = "01"
         override val pid = "0D"
+        override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> =
+            TypedValue.StringValue(rawResponse.value)
     }
 }

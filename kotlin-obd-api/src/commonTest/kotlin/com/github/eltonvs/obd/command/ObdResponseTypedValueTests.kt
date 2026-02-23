@@ -11,19 +11,21 @@ class ObdResponseTypedValueTests {
         override val name = "Test Command"
         override val mode = "01"
         override val pid = "00"
+        override fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*> =
+            TypedValue.StringValue(rawResponse.value)
     }
 
     private val dummyRawResponse = ObdRawResponse("410000", 0)
 
     @Test
-    fun `ObdResponse without typedValue returns null for all accessors`() {
+    fun `ObdResponse with default typedValue returns null for typed accessors`() {
         val response = ObdResponse(
             command = dummyCommand,
             rawResponse = dummyRawResponse,
             value = "100",
             unit = "Km/h"
         )
-        assertNull(response.typedValue)
+        // typedValue defaults to StringValue("100")
         assertNull(response.asInt())
         assertNull(response.asFloat())
         assertNull(response.asPercentage())

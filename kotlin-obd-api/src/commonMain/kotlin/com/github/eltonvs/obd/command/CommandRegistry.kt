@@ -77,22 +77,17 @@ public object CommandRegistry {
      * Registers a command using an instance to extract metadata.
      *
      * This method automatically extracts tag, mode, pid, and category
-     * from the provided command instance. For [TypedObdCommand] instances,
-     * the category is extracted; otherwise [CommandCategory.UNKNOWN] is used.
+     * from the provided command instance.
      *
      * @param command Command instance used as a template for metadata
      * @param factory Optional factory function; if not provided, the same instance is returned
      *                (which may cause issues if the command has mutable state)
      */
     public fun register(command: ObdCommand, factory: (() -> ObdCommand)? = null) {
-        val category = when (command) {
-            is TypedObdCommand<*> -> command.category
-            else -> CommandCategory.UNKNOWN
-        }
         val actualFactory = factory ?: { command }
         register(
             tag = command.tag,
-            category = category,
+            category = command.category,
             mode = command.mode,
             pid = command.pid,
             factory = actualFactory
