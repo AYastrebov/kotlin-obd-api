@@ -3,12 +3,12 @@
 agp = "8.12.3"
 caupain = "1.8.1"
 dokka = "2.1.0"
-kotlin = "2.3.0"
-maven-publish = "0.35.0"
+kotlin = "2.3.10"
+maven-publish = "0.36.0"
 kotlinx-coroutines = "1.10.2"
 kotlinx-binary-validator = "0.18.1"
-kotlinx-io = "0.8.2"
-junit-jupiter = "6.0.2"
+kotlinx-io = "0.9.0"
+junit-jupiter = "6.0.3"
 
 [libraries]
 
