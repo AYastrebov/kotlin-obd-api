@@ -227,6 +227,7 @@ public object CommandRegistry {
      */
     public fun restore(snapshot: RegistrySnapshot) {
         commandFactories.clear()
+        // Safe cast: RegistrySnapshot is only created by snapshot() with the correct type
         @Suppress("UNCHECKED_CAST")
         commandFactories.putAll(snapshot.data as Map<String, CommandEntry>)
     }
@@ -235,7 +236,8 @@ public object CommandRegistry {
      * Opaque snapshot of registry state for save/restore operations.
      *
      * This class is intentionally opaque to prevent external manipulation
-     * of registry internals.
+     * of registry internals. The [data] property uses [Any] to avoid exposing
+     * the private [CommandEntry] type in the public API.
      *
      * @see CommandRegistry.snapshot
      * @see CommandRegistry.restore

@@ -12,7 +12,7 @@ public abstract class ObdCommand {
     public open val category: CommandCategory = CommandCategory.UNKNOWN
 
     public val rawCommand: String
-        get() = listOf(mode, pid).joinToString(" ")
+        get() = "$mode $pid"
 
     public abstract fun parseTypedValue(rawResponse: ObdRawResponse): TypedValue<*>
 

@@ -20,9 +20,9 @@ public object RegexPatterns {
     public const val UNSUPPORTED_COMMAND_MESSAGE_PATTERN: String = "7F 0[0-A] 1[1-2]"
 }
 
-public fun removeAll(pattern: Regex, input: String): String {
+internal fun removeAll(pattern: Regex, input: String): String {
     return pattern.replace(input, "")
 }
 
-public fun removeAll(input: String, vararg patterns: Regex): String =
+internal fun removeAll(input: String, vararg patterns: Regex): String =
     patterns.fold(input) { acc, pattern -> removeAll(pattern, acc) }

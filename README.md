@@ -25,7 +25,7 @@
 
 - **Kotlin Multiplatform** - Works on JVM, Android, iOS, macOS, Linux, Windows, JS (Node.js), and WebAssembly
 - **Type-Safe Responses** - Get strongly-typed values (integers, percentages, temperatures, etc.) instead of raw strings
-- **100+ Built-in Commands** - Speed, RPM, temperatures, fuel data, trouble codes, and more
+- **80+ Built-in Commands** - Speed, RPM, temperatures, fuel data, trouble codes, and more
 - **Easy to Extend** - Create custom commands by extending base classes
 - **Flexible Connection** - Plug in any transport layer (Bluetooth, WiFi, USB) via [kotlinx-io](https://github.com/Kotlin/kotlinx-io)
 - **Built-in Caching** - LRU cache for commands that don't change frequently (like VIN)
@@ -185,7 +185,7 @@ A selection of commonly used commands:
 - **Diagnostics:** Trouble Codes (stored, pending, permanent), MIL Status, Clear Codes
 - **Vehicle Info:** VIN, Control Module Voltage
 
-For the complete list of 100+ commands, see [SUPPORTED_COMMANDS.md](SUPPORTED_COMMANDS.md).
+For the complete list of 80+ commands, see [SUPPORTED_COMMANDS.md](SUPPORTED_COMMANDS.md).
 
 ## Contributing
 

@@ -1,16 +1,13 @@
 package com.github.eltonvs.obd.command
 
-import kotlin.math.pow
-
 
 public fun bytesToInt(bufferedValue: IntArray, start: Int = 2, bytesToProcess: Int = -1): Long {
-    var bufferToProcess = bufferedValue.drop(start)
-    if (bytesToProcess != -1) {
-        bufferToProcess = bufferToProcess.take(bytesToProcess)
+    val end = if (bytesToProcess == -1) bufferedValue.size else minOf(start + bytesToProcess, bufferedValue.size)
+    var result = 0L
+    for (i in start until end) {
+        result = (result shl 8) or bufferedValue[i].toLong()
     }
-    return bufferToProcess.foldIndexed(0L) { index, total, current ->
-        total + current * 2f.pow((bufferToProcess.size - index - 1) * 8).toLong()
-    }
+    return result
 }
 
 public fun calculatePercentage(bufferedValue: IntArray, bytesToProcess: Int = -1): Float =

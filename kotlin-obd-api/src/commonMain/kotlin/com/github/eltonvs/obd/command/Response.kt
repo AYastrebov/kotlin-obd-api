@@ -11,7 +11,7 @@ import com.github.eltonvs.obd.command.RegexPatterns.WHITESPACE_PATTERN
  * @param functions The transformation functions to apply in order
  * @return The transformed value after all functions have been applied
  */
-public fun <T> T.pipe(vararg functions: (T) -> T): T =
+internal fun <T> T.pipe(vararg functions: (T) -> T): T =
     functions.fold(this) { value, f -> f(value) }
 
 /**

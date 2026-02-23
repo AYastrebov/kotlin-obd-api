@@ -34,8 +34,17 @@ public class ObdDeviceConnection(
      * even if one stream fails to close.
      */
     override fun close() {
-        responseCache.clear()
-        cacheAccessOrder.clear()
+        // Use tryLock for multiplatform compatibility (runBlocking unavailable on JS/Wasm).
+        // If the lock is held by a concurrent run(), the cache will be cleared by the GC
+        // after the connection is no longer referenced.
+        if (cacheMutex.tryLock()) {
+            try {
+                responseCache.clear()
+                cacheAccessOrder.clear()
+            } finally {
+                cacheMutex.unlock()
+            }
+        }
         runCatching { inputStream.close() }
         runCatching { outputStream.close() }
     }
@@ -116,20 +125,14 @@ public class ObdDeviceConnection(
     }
 
     private suspend fun readRawData(maxRetries: Int, retryDelayMs: Long): String {
-        var b: Byte
-        var c: Char
         val res = StringBuilder()
         var retriesCount = 0
 
         return withContext(Dispatchers.Default) {
-            // read until '>' arrives OR end of stream reached (-1)
+            // read until '>' arrives or retries exhausted
             while (retriesCount <= maxRetries) {
                 if (inputStream.request(1)) {
-                    b = inputStream.readByte()
-                    if (b < 0) {
-                        break
-                    }
-                    c = b.toInt().toChar()
+                    val c = inputStream.readByte().toInt().toChar()
                     if (c == '>') {
                         break
                     }

@@ -84,6 +84,7 @@ public class ObdCommandBuilder {
     public var skipDigitCheck: Boolean = false
 
     private var parser: ObdParser<*>? = null
+    private var parserFactory: ((String) -> ObdParser<*>)? = null
 
     /**
      * Configure parsing as an integer value.
@@ -99,12 +100,14 @@ public class ObdCommandBuilder {
         multiplier: Float = 1f,
         offset: Long = 0
     ) {
-        parser = Parsers.integer(
-            bytesToProcess = bytesToProcess,
-            multiplier = multiplier,
-            offset = offset,
-            unit = unit
-        )
+        parserFactory = { resolvedUnit ->
+            Parsers.integer(
+                bytesToProcess = bytesToProcess,
+                multiplier = multiplier,
+                offset = offset,
+                unit = resolvedUnit
+            )
+        }
     }
 
     /**
@@ -123,13 +126,15 @@ public class ObdCommandBuilder {
         offset: Float = 0f,
         decimalPlaces: Int = 2
     ) {
-        parser = Parsers.float(
-            bytesToProcess = bytesToProcess,
-            multiplier = multiplier,
-            offset = offset,
-            decimalPlaces = decimalPlaces,
-            unit = unit
-        )
+        parserFactory = { resolvedUnit ->
+            Parsers.float(
+                bytesToProcess = bytesToProcess,
+                multiplier = multiplier,
+                offset = offset,
+                decimalPlaces = decimalPlaces,
+                unit = resolvedUnit
+            )
+        }
     }
 
     /**
@@ -148,10 +153,12 @@ public class ObdCommandBuilder {
         if (unit.isEmpty()) {
             unit = "%"
         }
-        parser = Parsers.percentage(
-            bytesToProcess = bytesToProcess,
-            decimalPlaces = decimalPlaces
-        )
+        parserFactory = { _ ->
+            Parsers.percentage(
+                bytesToProcess = bytesToProcess,
+                decimalPlaces = decimalPlaces
+            )
+        }
     }
 
     /**
@@ -169,12 +176,14 @@ public class ObdCommandBuilder {
         offset: Float = -40f,
         decimalPlaces: Int = 1
     ) {
-        parser = Parsers.temperature(
-            bytesToProcess = bytesToProcess,
-            offset = offset,
-            decimalPlaces = decimalPlaces,
-            unit = unit.ifEmpty { "°C" }
-        )
+        parserFactory = { resolvedUnit ->
+            Parsers.temperature(
+                bytesToProcess = bytesToProcess,
+                offset = offset,
+                decimalPlaces = decimalPlaces,
+                unit = resolvedUnit.ifEmpty { "°C" }
+            )
+        }
     }
 
     /**
@@ -193,13 +202,15 @@ public class ObdCommandBuilder {
         offset: Float = 0f,
         decimalPlaces: Int = 1
     ) {
-        parser = Parsers.pressure(
-            bytesToProcess = bytesToProcess,
-            multiplier = multiplier,
-            offset = offset,
-            decimalPlaces = decimalPlaces,
-            unit = unit.ifEmpty { "kPa" }
-        )
+        parserFactory = { resolvedUnit ->
+            Parsers.pressure(
+                bytesToProcess = bytesToProcess,
+                multiplier = multiplier,
+                offset = offset,
+                decimalPlaces = decimalPlaces,
+                unit = resolvedUnit.ifEmpty { "kPa" }
+            )
+        }
     }
 
     /**
@@ -218,6 +229,7 @@ public class ObdCommandBuilder {
             bytesToProcess = bytesToProcess,
             formatAsTime = formatAsTime
         )
+        parserFactory = null
     }
 
     /**
@@ -245,6 +257,7 @@ public class ObdCommandBuilder {
             trueString = trueString,
             falseString = falseString
         )
+        parserFactory = null
     }
 
     /**
@@ -270,6 +283,7 @@ public class ObdCommandBuilder {
             bytesToProcess = bytesToProcess,
             stringTransform = stringTransform
         )
+        parserFactory = null
     }
 
     /**
@@ -291,6 +305,7 @@ public class ObdCommandBuilder {
             default = default,
             bytesToProcess = bytesToProcess
         )
+        parserFactory = null
     }
 
     /**
@@ -303,6 +318,7 @@ public class ObdCommandBuilder {
      */
     public fun <T> parseWith(customParser: ObdParser<T>) {
         parser = customParser
+        parserFactory = null
     }
 
     /**
@@ -316,6 +332,7 @@ public class ObdCommandBuilder {
         parser = ObdParser { rawResponse ->
             TypedValue.StringValue(handler(rawResponse))
         }
+        parserFactory = null
     }
 
     /**
@@ -330,7 +347,8 @@ public class ObdCommandBuilder {
         require(mode.isNotBlank()) { "mode must be set" }
         require(pid.isNotBlank()) { "pid must be set" }
 
-        val builtParser = parser ?: ObdParser { rawResponse ->
+        // Resolve parser factory with final unit value (deferred from parseAs* calls)
+        val builtParser = parserFactory?.invoke(unit) ?: parser ?: ObdParser { rawResponse ->
             TypedValue.StringValue(rawResponse.value)
         }
 
